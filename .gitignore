@@ -1,0 +1,8 @@
+
+Bikee/Bikee.Web.Tests/bin
+Bikee/Bikee.Web.Tests/obj
+Bikee/Bikee/bin
+Bikee/Bikee/obj
+*.user
+
+*.suo
