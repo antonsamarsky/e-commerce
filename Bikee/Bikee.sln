@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Web", "Bikee\Bikee.Web.csproj", "{78F11056-68FA-4DCA-9E3E-FC7C9A4FCCB6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Web", "Bikee.Web\Bikee.Web.csproj", "{78F11056-68FA-4DCA-9E3E-FC7C9A4FCCB6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Web.Tests", "Bikee.Web.Tests\Bikee.Web.Tests.csproj", "{F550221E-0D71-4140-9981-119CCCE5C2C3}"
 EndProject

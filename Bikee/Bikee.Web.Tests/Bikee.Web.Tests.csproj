@@ -60,7 +60,7 @@
     <Content Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Bikee\Bikee.Web.csproj">
+    <ProjectReference Include="..\Bikee.Web\Bikee.Web.csproj">
       <Project>{78F11056-68FA-4DCA-9E3E-FC7C9A4FCCB6}</Project>
       <Name>Bikee.Web</Name>
     </ProjectReference>

@@ -6,3 +6,5 @@ Bikee/Bikee/obj
 *.user
 
 *.suo
+Bikee/Bikee.Web/bin
+Bikee/Bikee.Web/obj
