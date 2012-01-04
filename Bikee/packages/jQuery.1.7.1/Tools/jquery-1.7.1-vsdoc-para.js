@@ -4,11 +4,11 @@
 * intended to be used only for design-time IntelliSense.  Please use the
 * standard jQuery library for all production use.
 *
-* Comment version: 1.7
+* Comment version: 1.7.1
 */
 
 /*!
-* jQuery JavaScript Library v1.7
+* jQuery JavaScript Library v1.7.1
 * http://jquery.com/
 *
 * Distributed in whole under the terms of the MIT
@@ -44,17 +44,17 @@
 var jQuery = function( selector, context ) {
 /// <summary>
 ///     1: Accepts a string containing a CSS selector which is then used to match a set of elements.
-///     &#10;    1.1 - $(selector, context) 
-///     &#10;    1.2 - $(element) 
-///     &#10;    1.3 - $(object) 
-///     &#10;    1.4 - $(elementArray) 
-///     &#10;    1.5 - $(jQuery object) 
-///     &#10;    1.6 - $()
-///     &#10;2: Creates DOM elements on the fly from the provided string of raw HTML.
-///     &#10;    2.1 - $(html, ownerDocument) 
-///     &#10;    2.2 - $(html, props)
-///     &#10;3: Binds a function to be executed when the DOM has finished loading.
-///     &#10;    3.1 - $(callback)
+///     <para>    1.1 - $(selector, context) </para>
+///     <para>    1.2 - $(element) </para>
+///     <para>    1.3 - $(object) </para>
+///     <para>    1.4 - $(elementArray) </para>
+///     <para>    1.5 - $(jQuery object) </para>
+///     <para>    1.6 - $()</para>
+///     <para>2: Creates DOM elements on the fly from the provided string of raw HTML.</para>
+///     <para>    2.1 - $(html, ownerDocument) </para>
+///     <para>    2.2 - $(html, props)</para>
+///     <para>3: Binds a function to be executed when the DOM has finished loading.</para>
+///     <para>    3.1 - $(callback)</para>
 /// </summary>
 /// <param name="selector" type="String">
 ///     A string containing a selector expression
@@ -68,6 +68,12 @@ var jQuery = function( selector, context ) {
 		return new jQuery.fn.init( selector, context, rootjQuery );
 	};
 jQuery.Callbacks = function( flags ) {
+/// <summary>
+///     A multi-purpose callbacks list object that provides a powerful way to manage callback lists.
+/// </summary>
+/// <param name="flags" type="String">
+///     An optional list of space-separated flags that change how the callback list behaves.
+/// </param>
 
 
 	// Convert flags from String-formatted to Object-formatted
@@ -283,7 +289,8 @@ jQuery.Deferred = function( func ) {
 					return this;
 				},
 				always: function() {
-					return deferred.done.apply( deferred, arguments ).fail.apply( deferred, arguments );
+					deferred.done.apply( deferred, arguments ).fail.apply( deferred, arguments );
+					return this;
 				},
 				pipe: function( fnDone, fnFail, fnProgress ) {
 					return jQuery.Deferred(function( newDefer ) {
@@ -452,8 +459,8 @@ jQuery.active = 0;
 jQuery.ajax = function( url, options ) {
 /// <summary>
 ///     Perform an asynchronous HTTP (Ajax) request.
-///     &#10;1 - jQuery.ajax(url, settings) 
-///     &#10;2 - jQuery.ajax(settings)
+///     <para>1 - jQuery.ajax(url, settings) </para>
+///     <para>2 - jQuery.ajax(settings)</para>
 /// </summary>
 /// <param name="url" type="String">
 ///     A string containing the URL to which the request is sent.
@@ -836,7 +843,7 @@ jQuery.ajax = function( url, options ) {
 					done( -1, e );
 				// Simply rethrow otherwise
 				} else {
-					jQuery.error( e );
+					throw e;
 				}
 			}
 		}
@@ -884,7 +891,7 @@ jQuery.ajaxPrefilter = function( dataTypeExpression, func ) {
 			}
 		}
 	};
-jQuery.ajaxSettings = { "url": 'http://localhost:25813/?ver=1.7&newLineMethod=xml',
+jQuery.ajaxSettings = { "url": 'http://localhost:25813/?ver=1.7.1&newLineMethod=para',
 "isLocal": false,
 "global": true,
 "type": 'GET',
@@ -954,7 +961,7 @@ jQuery.attr = function( elem, name, value, pass ) {
 
 		// don't get/set attributes on text, comment and attribute nodes
 		if ( !elem || nType === 3 || nType === 8 || nType === 2 ) {
-			return undefined;
+			return;
 		}
 
 		if ( pass && name in jQuery.attrFn ) {
@@ -962,7 +969,7 @@ jQuery.attr = function( elem, name, value, pass ) {
 		}
 
 		// Fallback to prop when attributes are not supported
-		if ( !("getAttribute" in elem) ) {
+		if ( typeof elem.getAttribute === "undefined" ) {
 			return jQuery.prop( elem, name, value );
 		}
 
@@ -979,7 +986,7 @@ jQuery.attr = function( elem, name, value, pass ) {
 
 			if ( value === null ) {
 				jQuery.removeAttr( elem, name );
-				return undefined;
+				return;
 
 			} else if ( hooks && "set" in hooks && notxml && (ret = hooks.set( elem, value, name )) !== undefined ) {
 				return ret;
@@ -1098,7 +1105,7 @@ jQuery.buildFragment = function( args, nodes, scripts ) {
 		doc = nodes[0].ownerDocument || nodes[0];
 	}
 
-  // Ensure that an attr object doesn't incorrectly stand in as a document object
+	// Ensure that an attr object doesn't incorrectly stand in as a document object
 	// Chrome and Firefox seem to allow this to occur and will throw exception
 	// Fixes #8950
 	if ( !doc.createDocumentFragment ) {
@@ -1113,7 +1120,7 @@ jQuery.buildFragment = function( args, nodes, scripts ) {
 	if ( args.length === 1 && typeof first === "string" && first.length < 512 && doc === document &&
 		first.charAt(0) === "<" && !rnocache.test( first ) &&
 		(jQuery.support.checkClone || !rchecked.test( first )) &&
-		(!jQuery.support.unknownElems && rnoshimcache.test( first )) ) {
+		(jQuery.support.html5Clone || !rnoshimcache.test( first )) ) {
 
 		cacheable = true;
 
@@ -1309,10 +1316,13 @@ jQuery.cleanData = function( elems ) {
 	};
 jQuery.clone = function( elem, dataAndEvents, deepDataAndEvents ) {
 
-		var clone = elem.cloneNode(true),
-				srcElements,
-				destElements,
-				i;
+		var srcElements,
+			destElements,
+			i,
+			// IE<=8 does not properly clone detached, unknown element nodes
+			clone = jQuery.support.html5Clone || !rnoshimcache.test( "<" + elem.nodeName ) ?
+				elem.cloneNode( true ) :
+				shimCloneNode( elem );
 
 		if ( (!jQuery.support.noCloneEvent || !jQuery.support.noCloneChecked) &&
 				(elem.nodeType === 1 || elem.nodeType === 11) && !jQuery.isXMLDoc(elem) ) {
@@ -1324,8 +1334,7 @@ jQuery.clone = function( elem, dataAndEvents, deepDataAndEvents ) {
 
 			cloneFixAttributes( elem, clone );
 
-			// Using Sizzle here is crazy slow, so we use getElementsByTagName
-			// instead
+			// Using Sizzle here is crazy slow, so we use getElementsByTagName instead
 			srcElements = getAll( elem );
 			destElements = getAll( clone );
 
@@ -1434,10 +1443,10 @@ jQuery.curCSS = function( elem, name, extra ) {
 jQuery.data = function( elem, name, data, pvt /* Internal Use Only */ ) {
 /// <summary>
 ///     1: Store arbitrary data associated with the specified element. Returns the value that was set.
-///     &#10;    1.1 - jQuery.data(element, key, value)
-///     &#10;2: Returns value at named data store for the element, as set by jQuery.data(element, name, value), or the full data store for the element.
-///     &#10;    2.1 - jQuery.data(element, key) 
-///     &#10;    2.2 - jQuery.data(element)
+///     <para>    1.1 - jQuery.data(element, key, value)</para>
+///     <para>2: Returns value at named data store for the element, as set by jQuery.data(element, name, value), or the full data store for the element.</para>
+///     <para>    2.1 - jQuery.data(element, key) </para>
+///     <para>    2.2 - jQuery.data(element)</para>
 /// </summary>
 /// <param name="elem" domElement="true">
 ///     The DOM element to associate with the data.
@@ -1468,7 +1477,7 @@ jQuery.data = function( elem, name, data, pvt /* Internal Use Only */ ) {
 
 			// Only defining an ID for JS objects if its cache already exists allows
 			// the code to shortcut on the same path as a DOM node with no cache
-			id = isNode ? elem[ jQuery.expando ] : elem[ jQuery.expando ] && jQuery.expando,
+			id = isNode ? elem[ internalKey ] : elem[ internalKey ] && internalKey,
 			isEvents = name === "events";
 
 		// Avoid doing any more work than we need to when trying to get data on an
@@ -1481,9 +1490,9 @@ jQuery.data = function( elem, name, data, pvt /* Internal Use Only */ ) {
 			// Only DOM nodes need a new unique ID for each element since their data
 			// ends up in the global cache
 			if ( isNode ) {
-				elem[ jQuery.expando ] = id = ++jQuery.uuid;
+				elem[ internalKey ] = id = ++jQuery.uuid;
 			} else {
-				id = jQuery.expando;
+				id = internalKey;
 			}
 		}
 
@@ -1662,7 +1671,7 @@ jQuery.error = function( msg ) {
 ///     The message to send out.
 /// </param>
 
-		throw msg;
+		throw new Error( msg );
 	};
 jQuery.etag = {};
 jQuery.event = { "global": {},
@@ -1672,7 +1681,7 @@ jQuery.event = { "global": {},
 "keyHooks": {},
 "mouseHooks": {},
 "special": {},
-"triggered": false };
+"triggered":  false };
 jQuery.expr = { "order": ['ID','CLASS','NAME','TAG'],
 "match": {},
 "leftMatch": {},
@@ -1688,8 +1697,8 @@ jQuery.expr = { "order": ['ID','CLASS','NAME','TAG'],
 jQuery.extend = function() {
 /// <summary>
 ///     Merge the contents of two or more objects together into the first object.
-///     &#10;1 - jQuery.extend(target, object1, objectN) 
-///     &#10;2 - jQuery.extend(deep, target, object1, objectN)
+///     <para>1 - jQuery.extend(target, object1, objectN) </para>
+///     <para>2 - jQuery.extend(deep, target, object1, objectN)</para>
 /// </summary>
 /// <param name="" type="Boolean">
 ///     If true, the merge becomes recursive (aka. deep copy).
@@ -1863,7 +1872,7 @@ jQuery.find = function( query, context, extra, seed ) {
 			return oldSizzle(query, context, extra, seed);
 		};
 jQuery.fn = { "selector": '',
-"jquery": '1.7',
+"jquery": '1.7.1',
 "length": 0 };
 jQuery.fragments = {};
 jQuery.fx = function( elem, options, prop ) {
@@ -2019,6 +2028,9 @@ jQuery.inArray = function( elem, array, i ) {
 /// <param name="array" type="Array">
 ///     An array through which to search.
 /// </param>
+/// <param name="i" type="Number">
+///     The index of the array at which to begin the search. The default is 0, which will search the whole array.
+/// </param>
 /// <returns type="Number" />
 
 		var len;
@@ -2040,7 +2052,7 @@ jQuery.inArray = function( elem, array, i ) {
 		}
 
 		return -1;
-};
+	};
 jQuery.isArray = Array.isArray || function (obj) {
     /// <summary>
     ///     Determine whether the argument is an array.
@@ -2086,7 +2098,7 @@ jQuery.isNumeric = function( obj ) {
 /// </param>
 /// <returns type="Boolean" />
 
-		return obj != null && rdigit.test( obj ) && !isNaN( obj );
+		return !isNaN( parseFloat(obj) ) && isFinite( obj );
 	};
 jQuery.isPlainObject = function( obj ) {
 /// <summary>
@@ -2165,8 +2177,6 @@ jQuery.makeArray = function( array, results ) {
 
 		if ( array != null ) {
 			// The window, strings (and functions) also have 'length'
-			// The extra typeof function check is to prevent crashes
-			// in Safari 2 (See: #3039)
 			// Tweaked logic slightly to handle Blackberry 4.7 RegExp issues #6930
 			var type = jQuery.type( array );
 
@@ -2182,8 +2192,8 @@ jQuery.makeArray = function( array, results ) {
 jQuery.map = function( elems, callback, arg ) {
 /// <summary>
 ///     Translate all items in an array or object to new array of items.
-///     &#10;1 - jQuery.map(array, callback(elementOfArray, indexInArray)) 
-///     &#10;2 - jQuery.map(arrayOrObject, callback( value, indexOrKey ))
+///     <para>1 - jQuery.map(array, callback(elementOfArray, indexInArray)) </para>
+///     <para>2 - jQuery.map(arrayOrObject, callback( value, indexOrKey ))</para>
 /// </summary>
 /// <param name="elems" type="Array">
 ///     The Array to translate.
@@ -2310,8 +2320,8 @@ jQuery.offset = {};
 jQuery.param = function( a, traditional ) {
 /// <summary>
 ///     Create a serialized representation of an array or object, suitable for use in a URL query string or Ajax request.
-///     &#10;1 - jQuery.param(obj) 
-///     &#10;2 - jQuery.param(obj, traditional)
+///     <para>1 - jQuery.param(obj) </para>
+///     <para>2 - jQuery.param(obj, traditional)</para>
 /// </summary>
 /// <param name="a" type="Object">
 ///     An array or object to serialize.
@@ -2449,7 +2459,7 @@ jQuery.prop = function( elem, name, value ) {
 
 		// don't get/set properties on text, comment and attribute nodes
 		if ( !elem || nType === 3 || nType === 8 || nType === 2 ) {
-			return undefined;
+			return;
 		}
 
 		notxml = nType !== 1 || !jQuery.isXMLDoc( elem );
@@ -2494,8 +2504,8 @@ jQuery.propHooks = { "tabIndex": {},
 jQuery.proxy = function( fn, context ) {
 /// <summary>
 ///     Takes a function and returns a new one that will always have a particular context.
-///     &#10;1 - jQuery.proxy(function, context) 
-///     &#10;2 - jQuery.proxy(context, name)
+///     <para>1 - jQuery.proxy(function, context) </para>
+///     <para>2 - jQuery.proxy(context, name)</para>
 /// </summary>
 /// <param name="fn" type="Function">
 ///     The function whose context will be changed.
@@ -2531,10 +2541,10 @@ jQuery.proxy = function( fn, context ) {
 jQuery.queue = function( elem, type, data ) {
 /// <summary>
 ///     1: Show the queue of functions to be executed on the matched element.
-///     &#10;    1.1 - jQuery.queue(element, queueName)
-///     &#10;2: Manipulate the queue of functions to be executed on the matched element.
-///     &#10;    2.1 - jQuery.queue(element, queueName, newQueue) 
-///     &#10;    2.2 - jQuery.queue(element, queueName, callback())
+///     <para>    1.1 - jQuery.queue(element, queueName)</para>
+///     <para>2: Manipulate the queue of functions to be executed on the matched element.</para>
+///     <para>    2.1 - jQuery.queue(element, queueName, newQueue) </para>
+///     <para>    2.2 - jQuery.queue(element, queueName, callback())</para>
 /// </summary>
 /// <param name="elem" domElement="true">
 ///     A DOM element where the array of queued functions is attached.
@@ -2585,7 +2595,7 @@ jQuery.ready = function( wait ) {
 
 			// Trigger any bound ready events
 			if ( jQuery.fn.trigger ) {
-				jQuery( document ).trigger( "ready" ).unbind( "ready" );
+				jQuery( document ).trigger( "ready" ).off( "ready" );
 			}
 		}
 	};
@@ -2595,21 +2605,24 @@ jQuery.removeAttr = function( elem, value ) {
 		var propName, attrNames, name, l,
 			i = 0;
 
-		if ( elem.nodeType === 1 ) {
-			attrNames = ( value || "" ).split( rspace );
+		if ( value && elem.nodeType === 1 ) {
+			attrNames = value.toLowerCase().split( rspace );
 			l = attrNames.length;
 
 			for ( ; i < l; i++ ) {
-				name = attrNames[ i ].toLowerCase();
-				propName = jQuery.propFix[ name ] || name;
+				name = attrNames[ i ];
 
-				// See #9699 for explanation of this approach (setting first, then removal)
-				jQuery.attr( elem, name, "" );
-				elem.removeAttribute( getSetAttribute ? name : propName );
+				if ( name ) {
+					propName = jQuery.propFix[ name ] || name;
 
-				// Set corresponding property to false for boolean attributes
-				if ( rboolean.test( name ) && propName in elem ) {
-					elem[ propName ] = false;
+					// See #9699 for explanation of this approach (setting first, then removal)
+					jQuery.attr( elem, name, "" );
+					elem.removeAttribute( getSetAttribute ? name : propName );
+
+					// Set corresponding property to false for boolean attributes
+					if ( rboolean.test( name ) && propName in elem ) {
+						elem[ propName ] = false;
+					}
 				}
 			}
 		}
@@ -2641,7 +2654,7 @@ jQuery.removeData = function( elem, name, pvt /* Internal Use Only */ ) {
 			cache = isNode ? jQuery.cache : elem,
 
 			// See jQuery.data for more information
-			id = isNode ? elem[ jQuery.expando ] : jQuery.expando;
+			id = isNode ? elem[ internalKey ] : internalKey;
 
 		// If there is already no cache entry for this object, there is no
 		// purpose in continuing
@@ -2655,19 +2668,21 @@ jQuery.removeData = function( elem, name, pvt /* Internal Use Only */ ) {
 
 			if ( thisCache ) {
 
-				// Support space separated names
-				if ( jQuery.isArray( name ) ) {
-					name = name;
-				} else if ( name in thisCache ) {
-					name = [ name ];
-				} else {
+				// Support array or space separated string names for data keys
+				if ( !jQuery.isArray( name ) ) {
 
-					// split the camel cased version by spaces
-					name = jQuery.camelCase( name );
+					// try the string as a key before any manipulation
 					if ( name in thisCache ) {
 						name = [ name ];
 					} else {
-						name = name.split( " " );
+
+						// split the camel cased version by spaces unless a key with the spaces exists
+						name = jQuery.camelCase( name );
+						if ( name in thisCache ) {
+							name = [ name ];
+						} else {
+							name = name.split( " " );
+						}
 					}
 				}
 
@@ -2711,11 +2726,11 @@ jQuery.removeData = function( elem, name, pvt /* Internal Use Only */ ) {
 			// nor does it have a removeAttribute function on Document nodes;
 			// we must handle all of these cases
 			if ( jQuery.support.deleteExpando ) {
-				delete elem[ jQuery.expando ];
+				delete elem[ internalKey ];
 			} else if ( elem.removeAttribute ) {
-				elem.removeAttribute( jQuery.expando );
+				elem.removeAttribute( internalKey );
 			} else {
-				elem[ jQuery.expando ] = null;
+				elem[ internalKey ] = null;
 			}
 		}
 	};
@@ -2856,11 +2871,11 @@ jQuery.support = { "leadingWhitespace": true,
 "hrefNormalized": true,
 "opacity": true,
 "cssFloat": true,
-"unknownElems": true,
 "checkOn": true,
 "optSelected": false,
 "getSetAttribute": true,
 "enctype": true,
+"html5Clone": true,
 "submitBubbles": true,
 "changeBubbles": true,
 "focusinBubbles": true,
@@ -2874,10 +2889,10 @@ jQuery.support = { "leadingWhitespace": true,
 "radioValue": false,
 "checkClone": true,
 "appendChecked": true,
-"boxModel": true,
-"reliableHiddenOffsets": true,
 "ajax": true,
 "cors": false,
+"reliableHiddenOffsets": true,
+"boxModel": true,
 "doesNotAddBorder": true,
 "doesAddBorderForTableAndCells": true,
 "fixedPosition": true,
@@ -2907,7 +2922,7 @@ jQuery.text = function( elem ) {
 		ret = "";
 
 	if ( nodeType ) {
-		if ( nodeType === 1 ) {
+		if ( nodeType === 1 || nodeType === 9 ) {
 			// Use textContent || innerText for elements
 			if ( typeof elem.textContent === 'string' ) {
 				return elem.textContent;
@@ -3152,11 +3167,11 @@ jQuery.prototype._toggle = function( fn ) {
 jQuery.prototype.add = function( selector, context ) {
 /// <summary>
 ///     Add elements to the set of matched elements.
-///     &#10;1 - add(selector) 
-///     &#10;2 - add(elements) 
-///     &#10;3 - add(html) 
-///     &#10;4 - add(jQuery object) 
-///     &#10;5 - add(selector, context)
+///     <para>1 - add(selector) </para>
+///     <para>2 - add(elements) </para>
+///     <para>3 - add(html) </para>
+///     <para>4 - add(jQuery object) </para>
+///     <para>5 - add(selector, context)</para>
 /// </summary>
 /// <param name="selector" type="String">
 ///     A string representing a selector expression to find additional elements to add to the set of matched elements.
@@ -3178,8 +3193,8 @@ jQuery.prototype.add = function( selector, context ) {
 jQuery.prototype.addClass = function( value ) {
 /// <summary>
 ///     Adds the specified class(es) to each of the set of matched elements.
-///     &#10;1 - addClass(className) 
-///     &#10;2 - addClass(function(index, currentClass))
+///     <para>1 - addClass(className) </para>
+///     <para>2 - addClass(function(index, currentClass))</para>
 /// </summary>
 /// <param name="value" type="String">
 ///     One or more class names to be added to the class attribute of each matched element.
@@ -3224,8 +3239,8 @@ jQuery.prototype.addClass = function( value ) {
 jQuery.prototype.after = function() {
 /// <summary>
 ///     Insert content, specified by the parameter, after each element in the set of matched elements.
-///     &#10;1 - after(content, content) 
-///     &#10;2 - after(function(index))
+///     <para>1 - after(content, content) </para>
+///     <para>2 - after(function(index))</para>
 /// </summary>
 /// <param name="" type="jQuery">
 ///     HTML string, DOM element, or jQuery object to insert after each element in the set of matched elements.
@@ -3241,7 +3256,7 @@ jQuery.prototype.after = function() {
 			});
 		} else if ( arguments.length ) {
 			var set = this.pushStack( this, "after", arguments );
-			set.push.apply( set, jQuery(arguments[0]).toArray() );
+			set.push.apply( set, jQuery.clean(arguments) );
 			return set;
 		}
 	};
@@ -3254,7 +3269,7 @@ jQuery.prototype.ajaxComplete = function( f ){
 /// </param>
 /// <returns type="jQuery" />
 
-		return this.bind( o, f );
+		return this.on( o, f );
 	};
 jQuery.prototype.ajaxError = function( f ){
 /// <summary>
@@ -3265,7 +3280,7 @@ jQuery.prototype.ajaxError = function( f ){
 /// </param>
 /// <returns type="jQuery" />
 
-		return this.bind( o, f );
+		return this.on( o, f );
 	};
 jQuery.prototype.ajaxSend = function( f ){
 /// <summary>
@@ -3276,7 +3291,7 @@ jQuery.prototype.ajaxSend = function( f ){
 /// </param>
 /// <returns type="jQuery" />
 
-		return this.bind( o, f );
+		return this.on( o, f );
 	};
 jQuery.prototype.ajaxStart = function( f ){
 /// <summary>
@@ -3287,7 +3302,7 @@ jQuery.prototype.ajaxStart = function( f ){
 /// </param>
 /// <returns type="jQuery" />
 
-		return this.bind( o, f );
+		return this.on( o, f );
 	};
 jQuery.prototype.ajaxStop = function( f ){
 /// <summary>
@@ -3298,7 +3313,7 @@ jQuery.prototype.ajaxStop = function( f ){
 /// </param>
 /// <returns type="jQuery" />
 
-		return this.bind( o, f );
+		return this.on( o, f );
 	};
 jQuery.prototype.ajaxSuccess = function( f ){
 /// <summary>
@@ -3309,7 +3324,7 @@ jQuery.prototype.ajaxSuccess = function( f ){
 /// </param>
 /// <returns type="jQuery" />
 
-		return this.bind( o, f );
+		return this.on( o, f );
 	};
 jQuery.prototype.andSelf = function() {
 /// <summary>
@@ -3322,8 +3337,8 @@ jQuery.prototype.andSelf = function() {
 jQuery.prototype.animate = function( prop, speed, easing, callback ) {
 /// <summary>
 ///     Perform a custom animation of a set of CSS properties.
-///     &#10;1 - animate(properties, duration, easing, complete) 
-///     &#10;2 - animate(properties, options)
+///     <para>1 - animate(properties, duration, easing, complete) </para>
+///     <para>2 - animate(properties, options)</para>
 /// </summary>
 /// <param name="prop" type="Object">
 ///     A map of CSS properties that the animation will move toward.
@@ -3472,8 +3487,8 @@ jQuery.prototype.animate = function( prop, speed, easing, callback ) {
 jQuery.prototype.append = function() {
 /// <summary>
 ///     Insert content, specified by the parameter, to the end of each element in the set of matched elements.
-///     &#10;1 - append(content, content) 
-///     &#10;2 - append(function(index, html))
+///     <para>1 - append(content, content) </para>
+///     <para>2 - append(function(index, html))</para>
 /// </summary>
 /// <param name="" type="jQuery">
 ///     DOM element, HTML string, or jQuery object to insert at the end of each element in the set of matched elements.
@@ -3519,11 +3534,11 @@ jQuery.prototype.appendTo = function( selector ) {
 jQuery.prototype.attr = function( name, value ) {
 /// <summary>
 ///     1: Get the value of an attribute for the first element in the set of matched elements.
-///     &#10;    1.1 - attr(attributeName)
-///     &#10;2: Set one or more attributes for the set of matched elements.
-///     &#10;    2.1 - attr(attributeName, value) 
-///     &#10;    2.2 - attr(map) 
-///     &#10;    2.3 - attr(attributeName, function(index, attr))
+///     <para>    1.1 - attr(attributeName)</para>
+///     <para>2: Set one or more attributes for the set of matched elements.</para>
+///     <para>    2.1 - attr(attributeName, value) </para>
+///     <para>    2.2 - attr(map) </para>
+///     <para>    2.3 - attr(attributeName, function(index, attr))</para>
 /// </summary>
 /// <param name="name" type="String">
 ///     The name of the attribute to set.
@@ -3538,8 +3553,8 @@ jQuery.prototype.attr = function( name, value ) {
 jQuery.prototype.before = function() {
 /// <summary>
 ///     Insert content, specified by the parameter, before each element in the set of matched elements.
-///     &#10;1 - before(content, content) 
-///     &#10;2 - before(function)
+///     <para>1 - before(content, content) </para>
+///     <para>2 - before(function)</para>
 /// </summary>
 /// <param name="" type="jQuery">
 ///     HTML string, DOM element, or jQuery object to insert before each element in the set of matched elements.
@@ -3554,7 +3569,7 @@ jQuery.prototype.before = function() {
 				this.parentNode.insertBefore( elem, this );
 			});
 		} else if ( arguments.length ) {
-			var set = jQuery(arguments[0]);
+			var set = jQuery.clean( arguments );
 			set.push.apply( set, this.toArray() );
 			return this.pushStack( set, "before", arguments );
 		}
@@ -3562,9 +3577,9 @@ jQuery.prototype.before = function() {
 jQuery.prototype.bind = function( types, data, fn ) {
 /// <summary>
 ///     Attach a handler to an event for the elements.
-///     &#10;1 - bind(eventType, eventData, handler(eventObject)) 
-///     &#10;2 - bind(eventType, eventData, preventBubble) 
-///     &#10;3 - bind(events)
+///     <para>1 - bind(eventType, eventData, handler(eventObject)) </para>
+///     <para>2 - bind(eventType, eventData, preventBubble) </para>
+///     <para>3 - bind(events)</para>
 /// </summary>
 /// <param name="types" type="String">
 ///     A string containing one or more DOM event types, such as "click" or "submit," or custom event names.
@@ -3582,9 +3597,9 @@ jQuery.prototype.bind = function( types, data, fn ) {
 jQuery.prototype.blur = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "blur" JavaScript event, or trigger that event on an element.
-///     &#10;1 - blur(handler(eventObject)) 
-///     &#10;2 - blur(eventData, handler(eventObject)) 
-///     &#10;3 - blur()
+///     <para>1 - blur(handler(eventObject)) </para>
+///     <para>2 - blur(eventData, handler(eventObject)) </para>
+///     <para>3 - blur()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -3600,15 +3615,15 @@ jQuery.prototype.blur = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.change = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "change" JavaScript event, or trigger that event on an element.
-///     &#10;1 - change(handler(eventObject)) 
-///     &#10;2 - change(eventData, handler(eventObject)) 
-///     &#10;3 - change()
+///     <para>1 - change(handler(eventObject)) </para>
+///     <para>2 - change(eventData, handler(eventObject)) </para>
+///     <para>3 - change()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -3624,7 +3639,7 @@ jQuery.prototype.change = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.children = function( until, selector ) {
@@ -3636,12 +3651,7 @@ jQuery.prototype.children = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -3657,7 +3667,7 @@ jQuery.prototype.children = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.clearQueue = function( type ) {
 /// <summary>
@@ -3673,9 +3683,9 @@ jQuery.prototype.clearQueue = function( type ) {
 jQuery.prototype.click = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "click" JavaScript event, or trigger that event on an element.
-///     &#10;1 - click(handler(eventObject)) 
-///     &#10;2 - click(eventData, handler(eventObject)) 
-///     &#10;3 - click()
+///     <para>1 - click(handler(eventObject)) </para>
+///     <para>2 - click(eventData, handler(eventObject)) </para>
+///     <para>3 - click()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -3691,14 +3701,14 @@ jQuery.prototype.click = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.clone = function( dataAndEvents, deepDataAndEvents ) {
 /// <summary>
 ///     Create a deep copy of the set of matched elements.
-///     &#10;1 - clone(withDataAndEvents) 
-///     &#10;2 - clone(withDataAndEvents, deepWithDataAndEvents)
+///     <para>1 - clone(withDataAndEvents) </para>
+///     <para>2 - clone(withDataAndEvents, deepWithDataAndEvents)</para>
 /// </summary>
 /// <param name="dataAndEvents" type="Boolean">
 ///     A Boolean indicating whether event handlers and data should be copied along with the elements. The default value is false. *In jQuery 1.5.0 the default value was incorrectly true; it was changed back to false in 1.5.1 and up.
@@ -3718,12 +3728,12 @@ jQuery.prototype.clone = function( dataAndEvents, deepDataAndEvents ) {
 jQuery.prototype.closest = function( selectors, context ) {
 /// <summary>
 ///     1: Get the first element that matches the selector, beginning at the current element and progressing up through the DOM tree.
-///     &#10;    1.1 - closest(selector) 
-///     &#10;    1.2 - closest(selector, context) 
-///     &#10;    1.3 - closest(jQuery object) 
-///     &#10;    1.4 - closest(element)
-///     &#10;2: Gets an array of all the elements and selectors matched against the current element up through the DOM tree.
-///     &#10;    2.1 - closest(selectors, context)
+///     <para>    1.1 - closest(selector) </para>
+///     <para>    1.2 - closest(selector, context) </para>
+///     <para>    1.3 - closest(jQuery object) </para>
+///     <para>    1.4 - closest(element)</para>
+///     <para>2: Gets an array of all the elements and selectors matched against the current element up through the DOM tree.</para>
+///     <para>    2.1 - closest(selectors, context)</para>
 /// </summary>
 /// <param name="selectors" type="String">
 ///     A string containing a selector expression to match elements against.
@@ -3791,12 +3801,7 @@ jQuery.prototype.contents = function( until, selector ) {
 /// </summary>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -3812,7 +3817,7 @@ jQuery.prototype.contents = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.contextmenu = function( data, fn ) {
 
@@ -3822,17 +3827,17 @@ jQuery.prototype.contextmenu = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.css = function( name, value ) {
 /// <summary>
 ///     1: Get the value of a style property for the first element in the set of matched elements.
-///     &#10;    1.1 - css(propertyName)
-///     &#10;2: Set one or more CSS properties for the  set of matched elements.
-///     &#10;    2.1 - css(propertyName, value) 
-///     &#10;    2.2 - css(propertyName, function(index, value)) 
-///     &#10;    2.3 - css(map)
+///     <para>    1.1 - css(propertyName)</para>
+///     <para>2: Set one or more CSS properties for the  set of matched elements.</para>
+///     <para>    2.1 - css(propertyName, value) </para>
+///     <para>    2.2 - css(propertyName, function(index, value)) </para>
+///     <para>    2.3 - css(map)</para>
 /// </summary>
 /// <param name="name" type="String">
 ///     A CSS property name.
@@ -3856,11 +3861,11 @@ jQuery.prototype.css = function( name, value ) {
 jQuery.prototype.data = function( key, value ) {
 /// <summary>
 ///     1: Store arbitrary data associated with the matched elements.
-///     &#10;    1.1 - data(key, value) 
-///     &#10;    1.2 - data(obj)
-///     &#10;2: Returns value at named data store for the first element in the jQuery collection, as set by data(name, value).
-///     &#10;    2.1 - data(key) 
-///     &#10;    2.2 - data()
+///     <para>    1.1 - data(key, value) </para>
+///     <para>    1.2 - data(obj)</para>
+///     <para>2: Returns value at named data store for the first element in the jQuery collection, as set by data(name, value).</para>
+///     <para>    2.1 - data(key) </para>
+///     <para>    2.2 - data()</para>
 /// </summary>
 /// <param name="key" type="String">
 ///     A string naming the piece of data to set.
@@ -3918,21 +3923,21 @@ jQuery.prototype.data = function( key, value ) {
 
 		} else {
 			return this.each(function() {
-				var $this = jQuery( this ),
+				var self = jQuery( this ),
 					args = [ parts[0], value ];
 
-				$this.triggerHandler( "setData" + parts[1] + "!", args );
+				self.triggerHandler( "setData" + parts[1] + "!", args );
 				jQuery.data( this, key, value );
-				$this.triggerHandler( "changeData" + parts[1] + "!", args );
+				self.triggerHandler( "changeData" + parts[1] + "!", args );
 			});
 		}
 	};
 jQuery.prototype.dblclick = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "dblclick" JavaScript event, or trigger that event on an element.
-///     &#10;1 - dblclick(handler(eventObject)) 
-///     &#10;2 - dblclick(eventData, handler(eventObject)) 
-///     &#10;3 - dblclick()
+///     <para>1 - dblclick(handler(eventObject)) </para>
+///     <para>2 - dblclick(eventData, handler(eventObject)) </para>
+///     <para>3 - dblclick()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -3948,7 +3953,7 @@ jQuery.prototype.dblclick = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.delay = function( time, type ) {
@@ -3976,9 +3981,9 @@ jQuery.prototype.delay = function( time, type ) {
 jQuery.prototype.delegate = function( selector, types, data, fn ) {
 /// <summary>
 ///     Attach a handler to one or more events for all elements that match the selector, now or in the future, based on a specific set of root elements.
-///     &#10;1 - delegate(selector, eventType, handler) 
-///     &#10;2 - delegate(selector, eventType, eventData, handler) 
-///     &#10;3 - delegate(selector, events)
+///     <para>1 - delegate(selector, eventType, handler) </para>
+///     <para>2 - delegate(selector, eventType, eventData, handler) </para>
+///     <para>3 - delegate(selector, events)</para>
 /// </summary>
 /// <param name="selector" type="String">
 ///     A selector to filter the elements that trigger the event.
@@ -4023,10 +4028,10 @@ jQuery.prototype.detach = function( selector ) {
 jQuery.prototype.die = function( types, fn ) {
 /// <summary>
 ///     1: Remove all event handlers previously attached using .live() from the elements.
-///     &#10;    1.1 - die()
-///     &#10;2: Remove an event handler previously attached using .live() from the elements.
-///     &#10;    2.1 - die(eventType, handler) 
-///     &#10;    2.2 - die(eventTypes)
+///     <para>    1.1 - die()</para>
+///     <para>2: Remove an event handler previously attached using .live() from the elements.</para>
+///     <para>    2.1 - die(eventType, handler) </para>
+///     <para>    2.2 - die(eventTypes)</para>
 /// </summary>
 /// <param name="types" type="String">
 ///     A string containing a JavaScript event type, such as click or keydown.
@@ -4150,23 +4155,24 @@ jQuery.prototype.end = function() {
 jQuery.prototype.eq = function( i ) {
 /// <summary>
 ///     Reduce the set of matched elements to the one at the specified index.
-///     &#10;1 - eq(index) 
-///     &#10;2 - eq(-index)
+///     <para>1 - eq(index) </para>
+///     <para>2 - eq(-index)</para>
 /// </summary>
 /// <param name="i" type="Number">
 ///     An integer indicating the 0-based position of the element.
 /// </param>
 /// <returns type="jQuery" />
 
+		i = +i;
 		return i === -1 ?
 			this.slice( i ) :
-			this.slice( i, +i + 1 );
+			this.slice( i, i + 1 );
 	};
 jQuery.prototype.error = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "error" JavaScript event.
-///     &#10;1 - error(handler(eventObject)) 
-///     &#10;2 - error(eventData, handler(eventObject))
+///     <para>1 - error(handler(eventObject)) </para>
+///     <para>2 - error(eventData, handler(eventObject))</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -4182,7 +4188,7 @@ jQuery.prototype.error = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.extend = function() {
@@ -4252,8 +4258,8 @@ jQuery.prototype.extend = function() {
 jQuery.prototype.fadeIn = function( speed, easing, callback ) {
 /// <summary>
 ///     Display the matched elements by fading them to opaque.
-///     &#10;1 - fadeIn(duration, callback) 
-///     &#10;2 - fadeIn(duration, easing, callback)
+///     <para>1 - fadeIn(duration, callback) </para>
+///     <para>2 - fadeIn(duration, easing, callback)</para>
 /// </summary>
 /// <param name="speed" type="Number">
 ///     A string or number determining how long the animation will run.
@@ -4271,8 +4277,8 @@ jQuery.prototype.fadeIn = function( speed, easing, callback ) {
 jQuery.prototype.fadeOut = function( speed, easing, callback ) {
 /// <summary>
 ///     Hide the matched elements by fading them to transparent.
-///     &#10;1 - fadeOut(duration, callback) 
-///     &#10;2 - fadeOut(duration, easing, callback)
+///     <para>1 - fadeOut(duration, callback) </para>
+///     <para>2 - fadeOut(duration, easing, callback)</para>
 /// </summary>
 /// <param name="speed" type="Number">
 ///     A string or number determining how long the animation will run.
@@ -4290,8 +4296,8 @@ jQuery.prototype.fadeOut = function( speed, easing, callback ) {
 jQuery.prototype.fadeTo = function( speed, to, easing, callback ) {
 /// <summary>
 ///     Adjust the opacity of the matched elements.
-///     &#10;1 - fadeTo(duration, opacity, callback) 
-///     &#10;2 - fadeTo(duration, opacity, easing, callback)
+///     <para>1 - fadeTo(duration, opacity, callback) </para>
+///     <para>2 - fadeTo(duration, opacity, easing, callback)</para>
 /// </summary>
 /// <param name="speed" type="Number">
 ///     A string or number determining how long the animation will run.
@@ -4330,10 +4336,10 @@ jQuery.prototype.fadeToggle = function( speed, easing, callback ) {
 jQuery.prototype.filter = function( selector ) {
 /// <summary>
 ///     Reduce the set of matched elements to those that match the selector or pass the function's test.
-///     &#10;1 - filter(selector) 
-///     &#10;2 - filter(function(index)) 
-///     &#10;3 - filter(element) 
-///     &#10;4 - filter(jQuery object)
+///     <para>1 - filter(selector) </para>
+///     <para>2 - filter(function(index)) </para>
+///     <para>3 - filter(element) </para>
+///     <para>4 - filter(jQuery object)</para>
 /// </summary>
 /// <param name="selector" type="String">
 ///     A string containing a selector expression to match the current set of elements against.
@@ -4345,9 +4351,9 @@ jQuery.prototype.filter = function( selector ) {
 jQuery.prototype.find = function( selector ) {
 /// <summary>
 ///     Get the descendants of each element in the current set of matched elements, filtered by a selector, jQuery object, or element.
-///     &#10;1 - find(selector) 
-///     &#10;2 - find(jQuery object) 
-///     &#10;3 - find(element)
+///     <para>1 - find(selector) </para>
+///     <para>2 - find(jQuery object) </para>
+///     <para>3 - find(element)</para>
 /// </summary>
 /// <param name="selector" type="String">
 ///     A string containing a selector expression to match elements against.
@@ -4400,9 +4406,9 @@ jQuery.prototype.first = function() {
 jQuery.prototype.focus = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "focus" JavaScript event, or trigger that event on an element.
-///     &#10;1 - focus(handler(eventObject)) 
-///     &#10;2 - focus(eventData, handler(eventObject)) 
-///     &#10;3 - focus()
+///     <para>1 - focus(handler(eventObject)) </para>
+///     <para>2 - focus(eventData, handler(eventObject)) </para>
+///     <para>3 - focus()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -4418,14 +4424,14 @@ jQuery.prototype.focus = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.focusin = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "focusin" event.
-///     &#10;1 - focusin(handler(eventObject)) 
-///     &#10;2 - focusin(eventData, handler(eventObject))
+///     <para>1 - focusin(handler(eventObject)) </para>
+///     <para>2 - focusin(eventData, handler(eventObject))</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -4441,14 +4447,14 @@ jQuery.prototype.focusin = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.focusout = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "focusout" JavaScript event.
-///     &#10;1 - focusout(handler(eventObject)) 
-///     &#10;2 - focusout(eventData, handler(eventObject))
+///     <para>1 - focusout(handler(eventObject)) </para>
+///     <para>2 - focusout(eventData, handler(eventObject))</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -4464,7 +4470,7 @@ jQuery.prototype.focusout = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.get = function( num ) {
@@ -4487,8 +4493,8 @@ jQuery.prototype.get = function( num ) {
 jQuery.prototype.has = function( target ) {
 /// <summary>
 ///     Reduce the set of matched elements to those that have a descendant that matches the selector or DOM element.
-///     &#10;1 - has(selector) 
-///     &#10;2 - has(contained)
+///     <para>1 - has(selector) </para>
+///     <para>2 - has(contained)</para>
 /// </summary>
 /// <param name="target" type="String">
 ///     A string containing a selector expression to match elements against.
@@ -4527,10 +4533,10 @@ jQuery.prototype.hasClass = function( selector ) {
 jQuery.prototype.height = function( size ) {
 /// <summary>
 ///     1: Get the current computed height for the first element in the set of matched elements.
-///     &#10;    1.1 - height()
-///     &#10;2: Set the CSS height of every matched element.
-///     &#10;    2.1 - height(value) 
-///     &#10;    2.2 - height(function(index, height))
+///     <para>    1.1 - height()</para>
+///     <para>2: Set the CSS height of every matched element.</para>
+///     <para>    2.1 - height(value) </para>
+///     <para>    2.2 - height(function(index, height))</para>
 /// </summary>
 /// <param name="size" type="Number">
 ///     An integer representing the number of pixels, or an integer with an optional unit of measure appended (as a string).
@@ -4582,9 +4588,9 @@ jQuery.prototype.height = function( size ) {
 jQuery.prototype.hide = function( speed, easing, callback ) {
 /// <summary>
 ///     Hide the matched elements.
-///     &#10;1 - hide() 
-///     &#10;2 - hide(duration, callback) 
-///     &#10;3 - hide(duration, easing, callback)
+///     <para>1 - hide() </para>
+///     <para>2 - hide(duration, callback) </para>
+///     <para>3 - hide(duration, easing, callback)</para>
 /// </summary>
 /// <param name="speed" type="Number">
 ///     A string or number determining how long the animation will run.
@@ -4630,9 +4636,9 @@ jQuery.prototype.hide = function( speed, easing, callback ) {
 jQuery.prototype.hover = function( fnOver, fnOut ) {
 /// <summary>
 ///     1: Bind two handlers to the matched elements, to be executed when the mouse pointer enters and leaves the elements.
-///     &#10;    1.1 - hover(handlerIn(eventObject), handlerOut(eventObject))
-///     &#10;2: Bind a single handler to the matched elements, to be executed when the mouse pointer enters or leaves the elements.
-///     &#10;    2.1 - hover(handlerInOut(eventObject))
+///     <para>    1.1 - hover(handlerIn(eventObject), handlerOut(eventObject))</para>
+///     <para>2: Bind a single handler to the matched elements, to be executed when the mouse pointer enters or leaves the elements.</para>
+///     <para>    2.1 - hover(handlerInOut(eventObject))</para>
 /// </summary>
 /// <param name="fnOver" type="Function">
 ///     A function to execute when the mouse pointer enters the element.
@@ -4647,10 +4653,10 @@ jQuery.prototype.hover = function( fnOver, fnOut ) {
 jQuery.prototype.html = function( value ) {
 /// <summary>
 ///     1: Get the HTML contents of the first element in the set of matched elements.
-///     &#10;    1.1 - html()
-///     &#10;2: Set the HTML contents of each element in the set of matched elements.
-///     &#10;    2.1 - html(htmlString) 
-///     &#10;    2.2 - html(function(index, oldhtml))
+///     <para>    1.1 - html()</para>
+///     <para>2: Set the HTML contents of each element in the set of matched elements.</para>
+///     <para>    2.1 - html(htmlString) </para>
+///     <para>    2.2 - html(function(index, oldhtml))</para>
 /// </summary>
 /// <param name="value" type="String">
 ///     A string of HTML to set as the content of each matched element.
@@ -4699,9 +4705,9 @@ jQuery.prototype.html = function( value ) {
 jQuery.prototype.index = function( elem ) {
 /// <summary>
 ///     Search for a given element from among the matched elements.
-///     &#10;1 - index() 
-///     &#10;2 - index(selector) 
-///     &#10;3 - index(element)
+///     <para>1 - index() </para>
+///     <para>2 - index(selector) </para>
+///     <para>3 - index(element)</para>
 /// </summary>
 /// <param name="elem" type="String">
 ///     A selector representing a jQuery collection in which to look for an element.
@@ -4917,10 +4923,10 @@ jQuery.prototype.insertBefore = function( selector ) {
 jQuery.prototype.is = function( selector ) {
 /// <summary>
 ///     Check the current matched set of elements against a selector, element, or jQuery object and return true if at least one of these elements matches the given arguments.
-///     &#10;1 - is(selector) 
-///     &#10;2 - is(function(index)) 
-///     &#10;3 - is(jQuery object) 
-///     &#10;4 - is(element)
+///     <para>1 - is(selector) </para>
+///     <para>2 - is(function(index)) </para>
+///     <para>3 - is(jQuery object) </para>
+///     <para>4 - is(element)</para>
 /// </summary>
 /// <param name="selector" type="String">
 ///     A string containing a selector expression to match elements against.
@@ -4939,9 +4945,9 @@ jQuery.prototype.is = function( selector ) {
 jQuery.prototype.keydown = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "keydown" JavaScript event, or trigger that event on an element.
-///     &#10;1 - keydown(handler(eventObject)) 
-///     &#10;2 - keydown(eventData, handler(eventObject)) 
-///     &#10;3 - keydown()
+///     <para>1 - keydown(handler(eventObject)) </para>
+///     <para>2 - keydown(eventData, handler(eventObject)) </para>
+///     <para>3 - keydown()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -4957,15 +4963,15 @@ jQuery.prototype.keydown = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.keypress = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "keypress" JavaScript event, or trigger that event on an element.
-///     &#10;1 - keypress(handler(eventObject)) 
-///     &#10;2 - keypress(eventData, handler(eventObject)) 
-///     &#10;3 - keypress()
+///     <para>1 - keypress(handler(eventObject)) </para>
+///     <para>2 - keypress(eventData, handler(eventObject)) </para>
+///     <para>3 - keypress()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -4981,15 +4987,15 @@ jQuery.prototype.keypress = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.keyup = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "keyup" JavaScript event, or trigger that event on an element.
-///     &#10;1 - keyup(handler(eventObject)) 
-///     &#10;2 - keyup(eventData, handler(eventObject)) 
-///     &#10;3 - keyup()
+///     <para>1 - keyup(handler(eventObject)) </para>
+///     <para>2 - keyup(eventData, handler(eventObject)) </para>
+///     <para>3 - keyup()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -5005,7 +5011,7 @@ jQuery.prototype.keyup = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.last = function() {
@@ -5020,9 +5026,9 @@ jQuery.prototype.length = 0;
 jQuery.prototype.live = function( types, data, fn ) {
 /// <summary>
 ///     Attach an event handler for all elements which match the current selector, now and in the future.
-///     &#10;1 - live(events, handler) 
-///     &#10;2 - live(events, data, handler) 
-///     &#10;3 - live(events-map)
+///     <para>1 - live(events, handler) </para>
+///     <para>2 - live(events, data, handler) </para>
+///     <para>3 - live(events-map)</para>
 /// </summary>
 /// <param name="types" type="String">
 ///     A string containing a JavaScript event type, such as "click" or "keydown." As of jQuery 1.4 the string can contain multiple, space-separated event types or custom event names.
@@ -5041,10 +5047,10 @@ jQuery.prototype.live = function( types, data, fn ) {
 jQuery.prototype.load = function( url, params, callback ) {
 /// <summary>
 ///     1: Bind an event handler to the "load" JavaScript event.
-///     &#10;    1.1 - load(handler(eventObject)) 
-///     &#10;    1.2 - load(eventData, handler(eventObject))
-///     &#10;2: Load data from the server and place the returned HTML into the matched element.
-///     &#10;    2.1 - load(url, data, complete(responseText, textStatus, XMLHttpRequest))
+///     <para>    1.1 - load(handler(eventObject)) </para>
+///     <para>    1.2 - load(eventData, handler(eventObject))</para>
+///     <para>2: Load data from the server and place the returned HTML into the matched element.</para>
+///     <para>    2.1 - load(url, data, complete(responseText, textStatus, XMLHttpRequest))</para>
 /// </summary>
 /// <param name="url" type="String">
 ///     A string containing the URL to which the request is sent.
@@ -5147,9 +5153,9 @@ jQuery.prototype.map = function( callback ) {
 jQuery.prototype.mousedown = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "mousedown" JavaScript event, or trigger that event on an element.
-///     &#10;1 - mousedown(handler(eventObject)) 
-///     &#10;2 - mousedown(eventData, handler(eventObject)) 
-///     &#10;3 - mousedown()
+///     <para>1 - mousedown(handler(eventObject)) </para>
+///     <para>2 - mousedown(eventData, handler(eventObject)) </para>
+///     <para>3 - mousedown()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -5165,15 +5171,15 @@ jQuery.prototype.mousedown = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.mouseenter = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to be fired when the mouse enters an element, or trigger that handler on an element.
-///     &#10;1 - mouseenter(handler(eventObject)) 
-///     &#10;2 - mouseenter(eventData, handler(eventObject)) 
-///     &#10;3 - mouseenter()
+///     <para>1 - mouseenter(handler(eventObject)) </para>
+///     <para>2 - mouseenter(eventData, handler(eventObject)) </para>
+///     <para>3 - mouseenter()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -5189,15 +5195,15 @@ jQuery.prototype.mouseenter = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.mouseleave = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to be fired when the mouse leaves an element, or trigger that handler on an element.
-///     &#10;1 - mouseleave(handler(eventObject)) 
-///     &#10;2 - mouseleave(eventData, handler(eventObject)) 
-///     &#10;3 - mouseleave()
+///     <para>1 - mouseleave(handler(eventObject)) </para>
+///     <para>2 - mouseleave(eventData, handler(eventObject)) </para>
+///     <para>3 - mouseleave()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -5213,15 +5219,15 @@ jQuery.prototype.mouseleave = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.mousemove = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "mousemove" JavaScript event, or trigger that event on an element.
-///     &#10;1 - mousemove(handler(eventObject)) 
-///     &#10;2 - mousemove(eventData, handler(eventObject)) 
-///     &#10;3 - mousemove()
+///     <para>1 - mousemove(handler(eventObject)) </para>
+///     <para>2 - mousemove(eventData, handler(eventObject)) </para>
+///     <para>3 - mousemove()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -5237,15 +5243,15 @@ jQuery.prototype.mousemove = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.mouseout = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "mouseout" JavaScript event, or trigger that event on an element.
-///     &#10;1 - mouseout(handler(eventObject)) 
-///     &#10;2 - mouseout(eventData, handler(eventObject)) 
-///     &#10;3 - mouseout()
+///     <para>1 - mouseout(handler(eventObject)) </para>
+///     <para>2 - mouseout(eventData, handler(eventObject)) </para>
+///     <para>3 - mouseout()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -5261,15 +5267,15 @@ jQuery.prototype.mouseout = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.mouseover = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "mouseover" JavaScript event, or trigger that event on an element.
-///     &#10;1 - mouseover(handler(eventObject)) 
-///     &#10;2 - mouseover(eventData, handler(eventObject)) 
-///     &#10;3 - mouseover()
+///     <para>1 - mouseover(handler(eventObject)) </para>
+///     <para>2 - mouseover(eventData, handler(eventObject)) </para>
+///     <para>3 - mouseover()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -5285,15 +5291,15 @@ jQuery.prototype.mouseover = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.mouseup = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "mouseup" JavaScript event, or trigger that event on an element.
-///     &#10;1 - mouseup(handler(eventObject)) 
-///     &#10;2 - mouseup(eventData, handler(eventObject)) 
-///     &#10;3 - mouseup()
+///     <para>1 - mouseup(handler(eventObject)) </para>
+///     <para>2 - mouseup(eventData, handler(eventObject)) </para>
+///     <para>3 - mouseup()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -5309,7 +5315,7 @@ jQuery.prototype.mouseup = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.next = function( until, selector ) {
@@ -5321,12 +5327,7 @@ jQuery.prototype.next = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5342,7 +5343,7 @@ jQuery.prototype.next = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.nextAll = function( until, selector ) {
 /// <summary>
@@ -5353,12 +5354,7 @@ jQuery.prototype.nextAll = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5374,13 +5370,13 @@ jQuery.prototype.nextAll = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.nextUntil = function( until, selector ) {
 /// <summary>
 ///     Get all following siblings of each element up to but not including the element matched by the selector, DOM node, or jQuery object passed.
-///     &#10;1 - nextUntil(selector, filter) 
-///     &#10;2 - nextUntil(element, filter)
+///     <para>1 - nextUntil(selector, filter) </para>
+///     <para>2 - nextUntil(element, filter)</para>
 /// </summary>
 /// <param name="until" type="String">
 ///     A string containing a selector expression to indicate where to stop matching following sibling elements.
@@ -5390,12 +5386,7 @@ jQuery.prototype.nextUntil = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5411,14 +5402,14 @@ jQuery.prototype.nextUntil = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.not = function( selector ) {
 /// <summary>
 ///     Remove elements from the set of matched elements.
-///     &#10;1 - not(selector) 
-///     &#10;2 - not(elements) 
-///     &#10;3 - not(function(index))
+///     <para>1 - not(selector) </para>
+///     <para>2 - not(elements) </para>
+///     <para>3 - not(function(index))</para>
 /// </summary>
 /// <param name="selector" type="String">
 ///     A string containing a selector expression to match elements against.
@@ -5430,8 +5421,8 @@ jQuery.prototype.not = function( selector ) {
 jQuery.prototype.off = function( types, selector, fn ) {
 /// <summary>
 ///     Remove an event handler.
-///     &#10;1 - off(events, selector, handler) 
-///     &#10;2 - off(events-map, selector)
+///     <para>1 - off(events, selector, handler) </para>
+///     <para>2 - off(events-map, selector)</para>
 /// </summary>
 /// <param name="types" type="String">
 ///     One or more space-separated event types and optional namespaces, or just namespaces, such as "click", "keydown.myPlugin", or ".myPlugin".
@@ -5476,10 +5467,10 @@ jQuery.prototype.off = function( types, selector, fn ) {
 jQuery.prototype.offset = function( options ) {
 /// <summary>
 ///     1: Get the current coordinates of the first element in the set of matched elements, relative to the document.
-///     &#10;    1.1 - offset()
-///     &#10;2: Set the current coordinates of every element in the set of matched elements, relative to the document.
-///     &#10;    2.1 - offset(coordinates) 
-///     &#10;    2.2 - offset(function(index, coords))
+///     <para>    1.1 - offset()</para>
+///     <para>2: Set the current coordinates of every element in the set of matched elements, relative to the document.</para>
+///     <para>    2.1 - offset(coordinates) </para>
+///     <para>    2.2 - offset(function(index, coords))</para>
 /// </summary>
 /// <param name="options" type="Object">
 ///     An object containing the properties top and left, which are integers indicating the new top and left coordinates for the elements.
@@ -5542,8 +5533,8 @@ jQuery.prototype.offsetParent = function() {
 jQuery.prototype.on = function( types, selector, data, fn, /*INTERNAL*/ one ) {
 /// <summary>
 ///     Attach an event handler function for one or more events to the selected elements.
-///     &#10;1 - on(events, selector, data, handler) 
-///     &#10;2 - on(events-map, selector, data)
+///     <para>1 - on(events, selector, data, handler) </para>
+///     <para>2 - on(events-map, selector, data)</para>
 /// </summary>
 /// <param name="types" type="String">
 ///     One or more space-separated event types and optional namespaces, such as "click" or "keydown.myPlugin".
@@ -5614,9 +5605,9 @@ jQuery.prototype.on = function( types, selector, data, fn, /*INTERNAL*/ one ) {
 jQuery.prototype.one = function( types, selector, data, fn ) {
 /// <summary>
 ///     Attach a handler to an event for the elements. The handler is executed at most once per element.
-///     &#10;1 - one(events, data, handler) 
-///     &#10;2 - one(events, selector, data, handler) 
-///     &#10;3 - one(events-map, selector, data)
+///     <para>1 - one(events, data, handler) </para>
+///     <para>2 - one(events, selector, data, handler) </para>
+///     <para>3 - one(events-map, selector, data)</para>
 /// </summary>
 /// <param name="types" type="String">
 ///     One or more space-separated event types and optional namespaces, such as "click" or "keydown.myPlugin".
@@ -5636,7 +5627,7 @@ jQuery.prototype.one = function( types, selector, data, fn ) {
 	};
 jQuery.prototype.outerHeight = function( margin ) {
 /// <summary>
-///     Get the current computed height for the first element in the set of matched elements, including padding, border, and optionally margin.
+///     Get the current computed height for the first element in the set of matched elements, including padding, border, and optionally margin. Returns an integer (without "px") representation of the value or null if called on an empty set of elements.
 /// </summary>
 /// <param name="margin" type="Boolean">
 ///     A Boolean indicating whether to include the element's margin in the calculation.
@@ -5675,12 +5666,7 @@ jQuery.prototype.parent = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5696,7 +5682,7 @@ jQuery.prototype.parent = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.parents = function( until, selector ) {
 /// <summary>
@@ -5707,12 +5693,7 @@ jQuery.prototype.parents = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5728,13 +5709,13 @@ jQuery.prototype.parents = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.parentsUntil = function( until, selector ) {
 /// <summary>
 ///     Get the ancestors of each element in the current set of matched elements, up to but not including the element matched by the selector, DOM node, or jQuery object.
-///     &#10;1 - parentsUntil(selector, filter) 
-///     &#10;2 - parentsUntil(element, filter)
+///     <para>1 - parentsUntil(selector, filter) </para>
+///     <para>2 - parentsUntil(element, filter)</para>
 /// </summary>
 /// <param name="until" type="String">
 ///     A string containing a selector expression to indicate where to stop matching ancestor elements.
@@ -5744,12 +5725,7 @@ jQuery.prototype.parentsUntil = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5765,7 +5741,7 @@ jQuery.prototype.parentsUntil = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.position = function() {
 /// <summary>
@@ -5805,8 +5781,8 @@ jQuery.prototype.position = function() {
 jQuery.prototype.prepend = function() {
 /// <summary>
 ///     Insert content, specified by the parameter, to the beginning of each element in the set of matched elements.
-///     &#10;1 - prepend(content, content) 
-///     &#10;2 - prepend(function(index, html))
+///     <para>1 - prepend(content, content) </para>
+///     <para>2 - prepend(function(index, html))</para>
 /// </summary>
 /// <param name="" type="jQuery">
 ///     DOM element, array of elements, HTML string, or jQuery object to insert at the beginning of each element in the set of matched elements.
@@ -5858,12 +5834,7 @@ jQuery.prototype.prev = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5879,7 +5850,7 @@ jQuery.prototype.prev = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.prevAll = function( until, selector ) {
 /// <summary>
@@ -5890,12 +5861,7 @@ jQuery.prototype.prevAll = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5911,13 +5877,13 @@ jQuery.prototype.prevAll = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.prevUntil = function( until, selector ) {
 /// <summary>
 ///     Get all preceding siblings of each element up to but not including the element matched by the selector, DOM node, or jQuery object.
-///     &#10;1 - prevUntil(selector, filter) 
-///     &#10;2 - prevUntil(element, filter)
+///     <para>1 - prevUntil(selector, filter) </para>
+///     <para>2 - prevUntil(element, filter)</para>
 /// </summary>
 /// <param name="until" type="String">
 ///     A string containing a selector expression to indicate where to stop matching preceding sibling elements.
@@ -5927,12 +5893,7 @@ jQuery.prototype.prevUntil = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5948,7 +5909,7 @@ jQuery.prototype.prevUntil = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.promise = function( type, object ) {
 /// <summary>
@@ -5995,11 +5956,11 @@ jQuery.prototype.promise = function( type, object ) {
 jQuery.prototype.prop = function( name, value ) {
 /// <summary>
 ///     1: Get the value of a property for the first element in the set of matched elements.
-///     &#10;    1.1 - prop(propertyName)
-///     &#10;2: Set one or more properties for the set of matched elements.
-///     &#10;    2.1 - prop(propertyName, value) 
-///     &#10;    2.2 - prop(map) 
-///     &#10;    2.3 - prop(propertyName, function(index, oldPropertyValue))
+///     <para>    1.1 - prop(propertyName)</para>
+///     <para>2: Set one or more properties for the set of matched elements.</para>
+///     <para>    2.1 - prop(propertyName, value) </para>
+///     <para>    2.2 - prop(map) </para>
+///     <para>    2.3 - prop(propertyName, function(index, oldPropertyValue))</para>
 /// </summary>
 /// <param name="name" type="String">
 ///     The name of the property to set.
@@ -6014,8 +5975,8 @@ jQuery.prototype.prop = function( name, value ) {
 jQuery.prototype.pushStack = function( elems, name, selector ) {
 /// <summary>
 ///     Add a collection of DOM elements onto the jQuery stack.
-///     &#10;1 - pushStack(elements) 
-///     &#10;2 - pushStack(elements, name, arguments)
+///     <para>1 - pushStack(elements) </para>
+///     <para>2 - pushStack(elements, name, arguments)</para>
 /// </summary>
 /// <param name="elems" type="Array">
 ///     An array of elements to push onto the stack and make into a new jQuery object.
@@ -6055,10 +6016,10 @@ jQuery.prototype.pushStack = function( elems, name, selector ) {
 jQuery.prototype.queue = function( type, data ) {
 /// <summary>
 ///     1: Show the queue of functions to be executed on the matched elements.
-///     &#10;    1.1 - queue(queueName)
-///     &#10;2: Manipulate the queue of functions to be executed on the matched elements.
-///     &#10;    2.1 - queue(queueName, newQueue) 
-///     &#10;    2.2 - queue(queueName, callback( next ))
+///     <para>    1.1 - queue(queueName)</para>
+///     <para>2: Manipulate the queue of functions to be executed on the matched elements.</para>
+///     <para>    2.1 - queue(queueName, newQueue) </para>
+///     <para>    2.2 - queue(queueName, callback( next ))</para>
 /// </summary>
 /// <param name="type" type="String">
 ///     A string containing the name of the queue. Defaults to fx, the standard effects queue.
@@ -6130,7 +6091,7 @@ jQuery.prototype.removeAttr = function( name ) {
 ///     Remove an attribute from each element in the set of matched elements.
 /// </summary>
 /// <param name="name" type="String">
-///     An attribute to remove.
+///     An attribute to remove; as of version 1.7, it can be a space-separated list of attributes.
 /// </param>
 /// <returns type="jQuery" />
 
@@ -6141,8 +6102,8 @@ jQuery.prototype.removeAttr = function( name ) {
 jQuery.prototype.removeClass = function( value ) {
 /// <summary>
 ///     Remove a single class, multiple classes, or all classes from each element in the set of matched elements.
-///     &#10;1 - removeClass(className) 
-///     &#10;2 - removeClass(function(index, class))
+///     <para>1 - removeClass(className) </para>
+///     <para>2 - removeClass(function(index, class))</para>
 /// </summary>
 /// <param name="value" type="String">
 ///     One or more space-separated classes to be removed from the class attribute of each matched element.
@@ -6183,8 +6144,8 @@ jQuery.prototype.removeClass = function( value ) {
 jQuery.prototype.removeData = function( key ) {
 /// <summary>
 ///     Remove a previously-stored piece of data.
-///     &#10;1 - removeData(name) 
-///     &#10;2 - removeData(list)
+///     <para>1 - removeData(name) </para>
+///     <para>2 - removeData(list)</para>
 /// </summary>
 /// <param name="key" type="String">
 ///     A string naming the piece of data to delete.
@@ -6243,8 +6204,8 @@ jQuery.prototype.replaceAll = function( selector ) {
 jQuery.prototype.replaceWith = function( value ) {
 /// <summary>
 ///     Replace each element in the set of matched elements with the provided new content.
-///     &#10;1 - replaceWith(newContent) 
-///     &#10;2 - replaceWith(function)
+///     <para>1 - replaceWith(newContent) </para>
+///     <para>2 - replaceWith(function)</para>
 /// </summary>
 /// <param name="value" type="jQuery">
 ///     The content to insert. May be an HTML string, DOM element, or jQuery object.
@@ -6286,9 +6247,9 @@ jQuery.prototype.replaceWith = function( value ) {
 jQuery.prototype.resize = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "resize" JavaScript event, or trigger that event on an element.
-///     &#10;1 - resize(handler(eventObject)) 
-///     &#10;2 - resize(eventData, handler(eventObject)) 
-///     &#10;3 - resize()
+///     <para>1 - resize(handler(eventObject)) </para>
+///     <para>2 - resize(eventData, handler(eventObject)) </para>
+///     <para>3 - resize()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -6304,15 +6265,15 @@ jQuery.prototype.resize = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.scroll = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "scroll" JavaScript event, or trigger that event on an element.
-///     &#10;1 - scroll(handler(eventObject)) 
-///     &#10;2 - scroll(eventData, handler(eventObject)) 
-///     &#10;3 - scroll()
+///     <para>1 - scroll(handler(eventObject)) </para>
+///     <para>2 - scroll(eventData, handler(eventObject)) </para>
+///     <para>3 - scroll()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -6328,15 +6289,15 @@ jQuery.prototype.scroll = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.scrollLeft = function( val ) {
 /// <summary>
 ///     1: Get the current horizontal position of the scroll bar for the first element in the set of matched elements.
-///     &#10;    1.1 - scrollLeft()
-///     &#10;2: Set the current horizontal position of the scroll bar for each of the set of matched elements.
-///     &#10;    2.1 - scrollLeft(value)
+///     <para>    1.1 - scrollLeft()</para>
+///     <para>2: Set the current horizontal position of the scroll bar for each of the set of matched elements.</para>
+///     <para>    2.1 - scrollLeft(value)</para>
 /// </summary>
 /// <param name="val" type="Number">
 ///     An integer indicating the new position to set the scroll bar to.
@@ -6379,9 +6340,9 @@ jQuery.prototype.scrollLeft = function( val ) {
 jQuery.prototype.scrollTop = function( val ) {
 /// <summary>
 ///     1: Get the current vertical position of the scroll bar for the first element in the set of matched elements.
-///     &#10;    1.1 - scrollTop()
-///     &#10;2: Set the current vertical position of the scroll bar for each of the set of matched elements.
-///     &#10;    2.1 - scrollTop(value)
+///     <para>    1.1 - scrollTop()</para>
+///     <para>2: Set the current vertical position of the scroll bar for each of the set of matched elements.</para>
+///     <para>    2.1 - scrollTop(value)</para>
 /// </summary>
 /// <param name="val" type="Number">
 ///     An integer indicating the new position to set the scroll bar to.
@@ -6424,9 +6385,9 @@ jQuery.prototype.scrollTop = function( val ) {
 jQuery.prototype.select = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "select" JavaScript event, or trigger that event on an element.
-///     &#10;1 - select(handler(eventObject)) 
-///     &#10;2 - select(eventData, handler(eventObject)) 
-///     &#10;3 - select()
+///     <para>1 - select(handler(eventObject)) </para>
+///     <para>2 - select(eventData, handler(eventObject)) </para>
+///     <para>3 - select()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -6442,7 +6403,7 @@ jQuery.prototype.select = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.serialize = function() {
@@ -6482,9 +6443,9 @@ jQuery.prototype.serializeArray = function() {
 jQuery.prototype.show = function( speed, easing, callback ) {
 /// <summary>
 ///     Display the matched elements.
-///     &#10;1 - show() 
-///     &#10;2 - show(duration, callback) 
-///     &#10;3 - show(duration, easing, callback)
+///     <para>1 - show() </para>
+///     <para>2 - show(duration, callback) </para>
+///     <para>3 - show(duration, easing, callback)</para>
 /// </summary>
 /// <param name="speed" type="Number">
 ///     A string or number determining how long the animation will run.
@@ -6550,12 +6511,7 @@ jQuery.prototype.siblings = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -6571,7 +6527,7 @@ jQuery.prototype.siblings = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.size = function() {
 /// <summary>
@@ -6599,8 +6555,8 @@ jQuery.prototype.slice = function() {
 jQuery.prototype.slideDown = function( speed, easing, callback ) {
 /// <summary>
 ///     Display the matched elements with a sliding motion.
-///     &#10;1 - slideDown(duration, callback) 
-///     &#10;2 - slideDown(duration, easing, callback)
+///     <para>1 - slideDown(duration, callback) </para>
+///     <para>2 - slideDown(duration, easing, callback)</para>
 /// </summary>
 /// <param name="speed" type="Number">
 ///     A string or number determining how long the animation will run.
@@ -6618,8 +6574,8 @@ jQuery.prototype.slideDown = function( speed, easing, callback ) {
 jQuery.prototype.slideToggle = function( speed, easing, callback ) {
 /// <summary>
 ///     Display or hide the matched elements with a sliding motion.
-///     &#10;1 - slideToggle(duration, callback) 
-///     &#10;2 - slideToggle(duration, easing, callback)
+///     <para>1 - slideToggle(duration, callback) </para>
+///     <para>2 - slideToggle(duration, easing, callback)</para>
 /// </summary>
 /// <param name="speed" type="Number">
 ///     A string or number determining how long the animation will run.
@@ -6637,8 +6593,8 @@ jQuery.prototype.slideToggle = function( speed, easing, callback ) {
 jQuery.prototype.slideUp = function( speed, easing, callback ) {
 /// <summary>
 ///     Hide the matched elements with a sliding motion.
-///     &#10;1 - slideUp(duration, callback) 
-///     &#10;2 - slideUp(duration, easing, callback)
+///     <para>1 - slideUp(duration, callback) </para>
+///     <para>2 - slideUp(duration, easing, callback)</para>
 /// </summary>
 /// <param name="speed" type="Number">
 ///     A string or number determining how long the animation will run.
@@ -6656,8 +6612,8 @@ jQuery.prototype.slideUp = function( speed, easing, callback ) {
 jQuery.prototype.stop = function( type, clearQueue, gotoEnd ) {
 /// <summary>
 ///     Stop the currently-running animation on the matched elements.
-///     &#10;1 - stop(clearQueue, jumpToEnd) 
-///     &#10;2 - stop(queue, clearQueue, jumpToEnd)
+///     <para>1 - stop(clearQueue, jumpToEnd) </para>
+///     <para>2 - stop(queue, clearQueue, jumpToEnd)</para>
 /// </summary>
 /// <param name="type" type="String">
 ///     The name of the queue in which to stop animations.
@@ -6680,7 +6636,7 @@ jQuery.prototype.stop = function( type, clearQueue, gotoEnd ) {
 		}
 
 		return this.each(function() {
-			var i,
+			var index,
 				hadTimers = false,
 				timers = jQuery.timers,
 				data = jQuery._data( this );
@@ -6690,33 +6646,33 @@ jQuery.prototype.stop = function( type, clearQueue, gotoEnd ) {
 				jQuery._unmark( true, this );
 			}
 
-			function stopQueue( elem, data, i ) {
-				var hooks = data[ i ];
-				jQuery.removeData( elem, i, true );
+			function stopQueue( elem, data, index ) {
+				var hooks = data[ index ];
+				jQuery.removeData( elem, index, true );
 				hooks.stop( gotoEnd );
 			}
 
 			if ( type == null ) {
-				for ( i in data ) {
-					if ( data[ i ].stop && i.indexOf(".run") === i.length - 4 ) {
-						stopQueue( this, data, i );
+				for ( index in data ) {
+					if ( data[ index ] && data[ index ].stop && index.indexOf(".run") === index.length - 4 ) {
+						stopQueue( this, data, index );
 					}
 				}
-			} else if ( data[ i = type + ".run" ] && data[ i ].stop ){
-				stopQueue( this, data, i );
+			} else if ( data[ index = type + ".run" ] && data[ index ].stop ){
+				stopQueue( this, data, index );
 			}
 
-			for ( i = timers.length; i--; ) {
-				if ( timers[ i ].elem === this && (type == null || timers[ i ].queue === type) ) {
+			for ( index = timers.length; index--; ) {
+				if ( timers[ index ].elem === this && (type == null || timers[ index ].queue === type) ) {
 					if ( gotoEnd ) {
 
 						// force the next step to be the last
-						timers[ i ]( true );
+						timers[ index ]( true );
 					} else {
-						timers[ i ].saveState();
+						timers[ index ].saveState();
 					}
 					hadTimers = true;
-					timers.splice( i, 1 );
+					timers.splice( index, 1 );
 				}
 			}
 
@@ -6731,9 +6687,9 @@ jQuery.prototype.stop = function( type, clearQueue, gotoEnd ) {
 jQuery.prototype.submit = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "submit" JavaScript event, or trigger that event on an element.
-///     &#10;1 - submit(handler(eventObject)) 
-///     &#10;2 - submit(eventData, handler(eventObject)) 
-///     &#10;3 - submit()
+///     <para>1 - submit(handler(eventObject)) </para>
+///     <para>2 - submit(eventData, handler(eventObject)) </para>
+///     <para>3 - submit()</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -6749,16 +6705,16 @@ jQuery.prototype.submit = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.text = function( text ) {
 /// <summary>
 ///     1: Get the combined text contents of each element in the set of matched elements, including their descendants.
-///     &#10;    1.1 - text()
-///     &#10;2: Set the content of each element in the set of matched elements to the specified text.
-///     &#10;    2.1 - text(textString) 
-///     &#10;    2.2 - text(function(index, text))
+///     <para>    1.1 - text()</para>
+///     <para>2: Set the content of each element in the set of matched elements to the specified text.</para>
+///     <para>    2.1 - text(textString) </para>
+///     <para>    2.2 - text(function(index, text))</para>
 /// </summary>
 /// <param name="text" type="String">
 ///     A string of text to set as the content of each matched element.
@@ -6790,11 +6746,11 @@ jQuery.prototype.toArray = function() {
 jQuery.prototype.toggle = function( fn, fn2, callback ) {
 /// <summary>
 ///     1: Bind two or more handlers to the matched elements, to be executed on alternate clicks.
-///     &#10;    1.1 - toggle(handler(eventObject), handler(eventObject), handler(eventObject))
-///     &#10;2: Display or hide the matched elements.
-///     &#10;    2.1 - toggle(duration, callback) 
-///     &#10;    2.2 - toggle(duration, easing, callback) 
-///     &#10;    2.3 - toggle(showOrHide)
+///     <para>    1.1 - toggle(handler(eventObject), handler(eventObject), handler(eventObject))</para>
+///     <para>2: Display or hide the matched elements.</para>
+///     <para>    2.1 - toggle(duration, callback) </para>
+///     <para>    2.2 - toggle(duration, easing, callback) </para>
+///     <para>    2.3 - toggle(showOrHide)</para>
 /// </summary>
 /// <param name="fn" type="Function">
 ///     A function to execute every even time the element is clicked.
@@ -6827,10 +6783,10 @@ jQuery.prototype.toggle = function( fn, fn2, callback ) {
 jQuery.prototype.toggleClass = function( value, stateVal ) {
 /// <summary>
 ///     Add or remove one or more classes from each element in the set of matched elements, depending on either the class's presence or the value of the switch argument.
-///     &#10;1 - toggleClass(className) 
-///     &#10;2 - toggleClass(className, switch) 
-///     &#10;3 - toggleClass(switch) 
-///     &#10;4 - toggleClass(function(index, class, switch), switch)
+///     <para>1 - toggleClass(className) </para>
+///     <para>2 - toggleClass(className, switch) </para>
+///     <para>3 - toggleClass(switch) </para>
+///     <para>4 - toggleClass(function(index, class, switch), switch)</para>
 /// </summary>
 /// <param name="value" type="String">
 ///     One or more class names (separated by spaces) to be toggled for each element in the matched set.
@@ -6878,8 +6834,8 @@ jQuery.prototype.toggleClass = function( value, stateVal ) {
 jQuery.prototype.trigger = function( type, data ) {
 /// <summary>
 ///     Execute all handlers and behaviors attached to the matched elements for the given event type.
-///     &#10;1 - trigger(eventType, extraParameters) 
-///     &#10;2 - trigger(event)
+///     <para>1 - trigger(eventType, extraParameters) </para>
+///     <para>2 - trigger(event)</para>
 /// </summary>
 /// <param name="type" type="String">
 ///     A string containing a JavaScript event type, such as click or submit.
@@ -6912,9 +6868,9 @@ jQuery.prototype.triggerHandler = function( type, data ) {
 jQuery.prototype.unbind = function( types, fn ) {
 /// <summary>
 ///     Remove a previously-attached event handler from the elements.
-///     &#10;1 - unbind(eventType, handler(eventObject)) 
-///     &#10;2 - unbind(eventType, false) 
-///     &#10;3 - unbind(event)
+///     <para>1 - unbind(eventType, handler(eventObject)) </para>
+///     <para>2 - unbind(eventType, false) </para>
+///     <para>3 - unbind(event)</para>
 /// </summary>
 /// <param name="types" type="String">
 ///     A string containing a JavaScript event type, such as click or submit.
@@ -6929,11 +6885,11 @@ jQuery.prototype.unbind = function( types, fn ) {
 jQuery.prototype.undelegate = function( selector, types, fn ) {
 /// <summary>
 ///     Remove a handler from the event for all elements which match the current selector, based upon a specific set of root elements.
-///     &#10;1 - undelegate() 
-///     &#10;2 - undelegate(selector, eventType) 
-///     &#10;3 - undelegate(selector, eventType, handler) 
-///     &#10;4 - undelegate(selector, events) 
-///     &#10;5 - undelegate(namespace)
+///     <para>1 - undelegate() </para>
+///     <para>2 - undelegate(selector, eventType) </para>
+///     <para>3 - undelegate(selector, eventType, handler) </para>
+///     <para>4 - undelegate(selector, events) </para>
+///     <para>5 - undelegate(namespace)</para>
 /// </summary>
 /// <param name="selector" type="String">
 ///     A selector which will be used to filter the event results.
@@ -6952,8 +6908,8 @@ jQuery.prototype.undelegate = function( selector, types, fn ) {
 jQuery.prototype.unload = function( data, fn ) {
 /// <summary>
 ///     Bind an event handler to the "unload" JavaScript event.
-///     &#10;1 - unload(handler(eventObject)) 
-///     &#10;2 - unload(eventData, handler(eventObject))
+///     <para>1 - unload(handler(eventObject)) </para>
+///     <para>2 - unload(eventData, handler(eventObject))</para>
 /// </summary>
 /// <param name="data" type="Object">
 ///     A map of data that will be passed to the event handler.
@@ -6969,7 +6925,7 @@ jQuery.prototype.unload = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.unwrap = function() {
@@ -6987,10 +6943,10 @@ jQuery.prototype.unwrap = function() {
 jQuery.prototype.val = function( value ) {
 /// <summary>
 ///     1: Get the current value of the first element in the set of matched elements.
-///     &#10;    1.1 - val()
-///     &#10;2: Set the value of each element in the set of matched elements.
-///     &#10;    2.1 - val(value) 
-///     &#10;    2.2 - val(function(index, value))
+///     <para>    1.1 - val()</para>
+///     <para>2: Set the value of each element in the set of matched elements.</para>
+///     <para>    2.1 - val(value) </para>
+///     <para>    2.2 - val(function(index, value))</para>
 /// </summary>
 /// <param name="value" type="String">
 ///     A string of text or an array of strings corresponding to the value of each matched element to set as selected/checked.
@@ -7017,7 +6973,7 @@ jQuery.prototype.val = function( value ) {
 					ret == null ? "" : ret;
 			}
 
-			return undefined;
+			return;
 		}
 
 		isFunction = jQuery.isFunction( value );
@@ -7057,10 +7013,10 @@ jQuery.prototype.val = function( value ) {
 jQuery.prototype.width = function( size ) {
 /// <summary>
 ///     1: Get the current computed width for the first element in the set of matched elements.
-///     &#10;    1.1 - width()
-///     &#10;2: Set the CSS width of each element in the set of matched elements.
-///     &#10;    2.1 - width(value) 
-///     &#10;    2.2 - width(function(index, width))
+///     <para>    1.1 - width()</para>
+///     <para>2: Set the CSS width of each element in the set of matched elements.</para>
+///     <para>    2.1 - width(value) </para>
+///     <para>    2.2 - width(function(index, width))</para>
 /// </summary>
 /// <param name="size" type="Number">
 ///     An integer representing the number of pixels, or an integer along with an optional unit of measure appended (as a string).
@@ -7112,16 +7068,18 @@ jQuery.prototype.width = function( size ) {
 jQuery.prototype.wrap = function( html ) {
 /// <summary>
 ///     Wrap an HTML structure around each element in the set of matched elements.
-///     &#10;1 - wrap(wrappingElement) 
-///     &#10;2 - wrap(function(index))
+///     <para>1 - wrap(wrappingElement) </para>
+///     <para>2 - wrap(function(index))</para>
 /// </summary>
 /// <param name="html" type="jQuery">
 ///     An HTML snippet, selector expression, jQuery object, or DOM element specifying the structure to wrap around the matched elements.
 /// </param>
 /// <returns type="jQuery" />
 
-		return this.each(function() {
-			jQuery( this ).wrapAll( html );
+		var isFunction = jQuery.isFunction( html );
+
+		return this.each(function(i) {
+			jQuery( this ).wrapAll( isFunction ? html.call(this, i) : html );
 		});
 	};
 jQuery.prototype.wrapAll = function( html ) {
@@ -7163,8 +7121,8 @@ jQuery.prototype.wrapAll = function( html ) {
 jQuery.prototype.wrapInner = function( html ) {
 /// <summary>
 ///     Wrap an HTML structure around the content of each element in the set of matched elements.
-///     &#10;1 - wrapInner(wrappingElement) 
-///     &#10;2 - wrapInner(function(index))
+///     <para>1 - wrapInner(wrappingElement) </para>
+///     <para>2 - wrapInner(function(index))</para>
 /// </summary>
 /// <param name="html" type="String">
 ///     An HTML snippet, selector expression, jQuery object, or DOM element specifying the structure to wrap around the content of the matched elements.

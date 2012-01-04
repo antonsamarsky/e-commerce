@@ -4,11 +4,11 @@
 * intended to be used only for design-time IntelliSense.  Please use the
 * standard jQuery library for all production use.
 *
-* Comment version: 1.7
+* Comment version: 1.7.1
 */
 
 /*!
-* jQuery JavaScript Library v1.7
+* jQuery JavaScript Library v1.7.1
 * http://jquery.com/
 *
 * Distributed in whole under the terms of the MIT
@@ -68,6 +68,12 @@ var jQuery = function( selector, context ) {
 		return new jQuery.fn.init( selector, context, rootjQuery );
 	};
 jQuery.Callbacks = function( flags ) {
+/// <summary>
+///     A multi-purpose callbacks list object that provides a powerful way to manage callback lists.
+/// </summary>
+/// <param name="flags" type="String">
+///     An optional list of space-separated flags that change how the callback list behaves.
+/// </param>
 
 
 	// Convert flags from String-formatted to Object-formatted
@@ -283,7 +289,8 @@ jQuery.Deferred = function( func ) {
 					return this;
 				},
 				always: function() {
-					return deferred.done.apply( deferred, arguments ).fail.apply( deferred, arguments );
+					deferred.done.apply( deferred, arguments ).fail.apply( deferred, arguments );
+					return this;
 				},
 				pipe: function( fnDone, fnFail, fnProgress ) {
 					return jQuery.Deferred(function( newDefer ) {
@@ -836,7 +843,7 @@ jQuery.ajax = function( url, options ) {
 					done( -1, e );
 				// Simply rethrow otherwise
 				} else {
-					jQuery.error( e );
+					throw e;
 				}
 			}
 		}
@@ -884,7 +891,7 @@ jQuery.ajaxPrefilter = function( dataTypeExpression, func ) {
 			}
 		}
 	};
-jQuery.ajaxSettings = { "url": 'http://localhost:25813/?ver=1.7&newLineMethod=xml',
+jQuery.ajaxSettings = { "url": 'http://localhost:25813/',
 "isLocal": false,
 "global": true,
 "type": 'GET',
@@ -954,7 +961,7 @@ jQuery.attr = function( elem, name, value, pass ) {
 
 		// don't get/set attributes on text, comment and attribute nodes
 		if ( !elem || nType === 3 || nType === 8 || nType === 2 ) {
-			return undefined;
+			return;
 		}
 
 		if ( pass && name in jQuery.attrFn ) {
@@ -962,7 +969,7 @@ jQuery.attr = function( elem, name, value, pass ) {
 		}
 
 		// Fallback to prop when attributes are not supported
-		if ( !("getAttribute" in elem) ) {
+		if ( typeof elem.getAttribute === "undefined" ) {
 			return jQuery.prop( elem, name, value );
 		}
 
@@ -979,7 +986,7 @@ jQuery.attr = function( elem, name, value, pass ) {
 
 			if ( value === null ) {
 				jQuery.removeAttr( elem, name );
-				return undefined;
+				return;
 
 			} else if ( hooks && "set" in hooks && notxml && (ret = hooks.set( elem, value, name )) !== undefined ) {
 				return ret;
@@ -1098,7 +1105,7 @@ jQuery.buildFragment = function( args, nodes, scripts ) {
 		doc = nodes[0].ownerDocument || nodes[0];
 	}
 
-  // Ensure that an attr object doesn't incorrectly stand in as a document object
+	// Ensure that an attr object doesn't incorrectly stand in as a document object
 	// Chrome and Firefox seem to allow this to occur and will throw exception
 	// Fixes #8950
 	if ( !doc.createDocumentFragment ) {
@@ -1113,7 +1120,7 @@ jQuery.buildFragment = function( args, nodes, scripts ) {
 	if ( args.length === 1 && typeof first === "string" && first.length < 512 && doc === document &&
 		first.charAt(0) === "<" && !rnocache.test( first ) &&
 		(jQuery.support.checkClone || !rchecked.test( first )) &&
-		(!jQuery.support.unknownElems && rnoshimcache.test( first )) ) {
+		(jQuery.support.html5Clone || !rnoshimcache.test( first )) ) {
 
 		cacheable = true;
 
@@ -1309,10 +1316,13 @@ jQuery.cleanData = function( elems ) {
 	};
 jQuery.clone = function( elem, dataAndEvents, deepDataAndEvents ) {
 
-		var clone = elem.cloneNode(true),
-				srcElements,
-				destElements,
-				i;
+		var srcElements,
+			destElements,
+			i,
+			// IE<=8 does not properly clone detached, unknown element nodes
+			clone = jQuery.support.html5Clone || !rnoshimcache.test( "<" + elem.nodeName ) ?
+				elem.cloneNode( true ) :
+				shimCloneNode( elem );
 
 		if ( (!jQuery.support.noCloneEvent || !jQuery.support.noCloneChecked) &&
 				(elem.nodeType === 1 || elem.nodeType === 11) && !jQuery.isXMLDoc(elem) ) {
@@ -1324,8 +1334,7 @@ jQuery.clone = function( elem, dataAndEvents, deepDataAndEvents ) {
 
 			cloneFixAttributes( elem, clone );
 
-			// Using Sizzle here is crazy slow, so we use getElementsByTagName
-			// instead
+			// Using Sizzle here is crazy slow, so we use getElementsByTagName instead
 			srcElements = getAll( elem );
 			destElements = getAll( clone );
 
@@ -1468,7 +1477,7 @@ jQuery.data = function( elem, name, data, pvt /* Internal Use Only */ ) {
 
 			// Only defining an ID for JS objects if its cache already exists allows
 			// the code to shortcut on the same path as a DOM node with no cache
-			id = isNode ? elem[ jQuery.expando ] : elem[ jQuery.expando ] && jQuery.expando,
+			id = isNode ? elem[ internalKey ] : elem[ internalKey ] && internalKey,
 			isEvents = name === "events";
 
 		// Avoid doing any more work than we need to when trying to get data on an
@@ -1481,9 +1490,9 @@ jQuery.data = function( elem, name, data, pvt /* Internal Use Only */ ) {
 			// Only DOM nodes need a new unique ID for each element since their data
 			// ends up in the global cache
 			if ( isNode ) {
-				elem[ jQuery.expando ] = id = ++jQuery.uuid;
+				elem[ internalKey ] = id = ++jQuery.uuid;
 			} else {
-				id = jQuery.expando;
+				id = internalKey;
 			}
 		}
 
@@ -1662,7 +1671,7 @@ jQuery.error = function( msg ) {
 ///     The message to send out.
 /// </param>
 
-		throw msg;
+		throw new Error( msg );
 	};
 jQuery.etag = {};
 jQuery.event = { "global": {},
@@ -1863,7 +1872,7 @@ jQuery.find = function( query, context, extra, seed ) {
 			return oldSizzle(query, context, extra, seed);
 		};
 jQuery.fn = { "selector": '',
-"jquery": '1.7',
+"jquery": '1.7.1',
 "length": 0 };
 jQuery.fragments = {};
 jQuery.fx = function( elem, options, prop ) {
@@ -2019,6 +2028,9 @@ jQuery.inArray = function( elem, array, i ) {
 /// <param name="array" type="Array">
 ///     An array through which to search.
 /// </param>
+/// <param name="i" type="Number">
+///     The index of the array at which to begin the search. The default is 0, which will search the whole array.
+/// </param>
 /// <returns type="Number" />
 
 		var len;
@@ -2086,7 +2098,7 @@ jQuery.isNumeric = function( obj ) {
 /// </param>
 /// <returns type="Boolean" />
 
-		return obj != null && rdigit.test( obj ) && !isNaN( obj );
+		return !isNaN( parseFloat(obj) ) && isFinite( obj );
 	};
 jQuery.isPlainObject = function( obj ) {
 /// <summary>
@@ -2165,8 +2177,6 @@ jQuery.makeArray = function( array, results ) {
 
 		if ( array != null ) {
 			// The window, strings (and functions) also have 'length'
-			// The extra typeof function check is to prevent crashes
-			// in Safari 2 (See: #3039)
 			// Tweaked logic slightly to handle Blackberry 4.7 RegExp issues #6930
 			var type = jQuery.type( array );
 
@@ -2449,7 +2459,7 @@ jQuery.prop = function( elem, name, value ) {
 
 		// don't get/set properties on text, comment and attribute nodes
 		if ( !elem || nType === 3 || nType === 8 || nType === 2 ) {
-			return undefined;
+			return;
 		}
 
 		notxml = nType !== 1 || !jQuery.isXMLDoc( elem );
@@ -2585,7 +2595,7 @@ jQuery.ready = function( wait ) {
 
 			// Trigger any bound ready events
 			if ( jQuery.fn.trigger ) {
-				jQuery( document ).trigger( "ready" ).unbind( "ready" );
+				jQuery( document ).trigger( "ready" ).off( "ready" );
 			}
 		}
 	};
@@ -2595,21 +2605,24 @@ jQuery.removeAttr = function( elem, value ) {
 		var propName, attrNames, name, l,
 			i = 0;
 
-		if ( elem.nodeType === 1 ) {
-			attrNames = ( value || "" ).split( rspace );
+		if ( value && elem.nodeType === 1 ) {
+			attrNames = value.toLowerCase().split( rspace );
 			l = attrNames.length;
 
 			for ( ; i < l; i++ ) {
-				name = attrNames[ i ].toLowerCase();
-				propName = jQuery.propFix[ name ] || name;
+				name = attrNames[ i ];
 
-				// See #9699 for explanation of this approach (setting first, then removal)
-				jQuery.attr( elem, name, "" );
-				elem.removeAttribute( getSetAttribute ? name : propName );
+				if ( name ) {
+					propName = jQuery.propFix[ name ] || name;
 
-				// Set corresponding property to false for boolean attributes
-				if ( rboolean.test( name ) && propName in elem ) {
-					elem[ propName ] = false;
+					// See #9699 for explanation of this approach (setting first, then removal)
+					jQuery.attr( elem, name, "" );
+					elem.removeAttribute( getSetAttribute ? name : propName );
+
+					// Set corresponding property to false for boolean attributes
+					if ( rboolean.test( name ) && propName in elem ) {
+						elem[ propName ] = false;
+					}
 				}
 			}
 		}
@@ -2641,7 +2654,7 @@ jQuery.removeData = function( elem, name, pvt /* Internal Use Only */ ) {
 			cache = isNode ? jQuery.cache : elem,
 
 			// See jQuery.data for more information
-			id = isNode ? elem[ jQuery.expando ] : jQuery.expando;
+			id = isNode ? elem[ internalKey ] : internalKey;
 
 		// If there is already no cache entry for this object, there is no
 		// purpose in continuing
@@ -2655,19 +2668,21 @@ jQuery.removeData = function( elem, name, pvt /* Internal Use Only */ ) {
 
 			if ( thisCache ) {
 
-				// Support space separated names
-				if ( jQuery.isArray( name ) ) {
-					name = name;
-				} else if ( name in thisCache ) {
-					name = [ name ];
-				} else {
+				// Support array or space separated string names for data keys
+				if ( !jQuery.isArray( name ) ) {
 
-					// split the camel cased version by spaces
-					name = jQuery.camelCase( name );
+					// try the string as a key before any manipulation
 					if ( name in thisCache ) {
 						name = [ name ];
 					} else {
-						name = name.split( " " );
+
+						// split the camel cased version by spaces unless a key with the spaces exists
+						name = jQuery.camelCase( name );
+						if ( name in thisCache ) {
+							name = [ name ];
+						} else {
+							name = name.split( " " );
+						}
 					}
 				}
 
@@ -2711,11 +2726,11 @@ jQuery.removeData = function( elem, name, pvt /* Internal Use Only */ ) {
 			// nor does it have a removeAttribute function on Document nodes;
 			// we must handle all of these cases
 			if ( jQuery.support.deleteExpando ) {
-				delete elem[ jQuery.expando ];
+				delete elem[ internalKey ];
 			} else if ( elem.removeAttribute ) {
-				elem.removeAttribute( jQuery.expando );
+				elem.removeAttribute( internalKey );
 			} else {
-				elem[ jQuery.expando ] = null;
+				elem[ internalKey ] = null;
 			}
 		}
 	};
@@ -2856,11 +2871,11 @@ jQuery.support = { "leadingWhitespace": true,
 "hrefNormalized": true,
 "opacity": true,
 "cssFloat": true,
-"unknownElems": true,
 "checkOn": true,
 "optSelected": false,
 "getSetAttribute": true,
 "enctype": true,
+"html5Clone": true,
 "submitBubbles": true,
 "changeBubbles": true,
 "focusinBubbles": true,
@@ -2874,10 +2889,10 @@ jQuery.support = { "leadingWhitespace": true,
 "radioValue": false,
 "checkClone": true,
 "appendChecked": true,
-"boxModel": true,
-"reliableHiddenOffsets": true,
 "ajax": true,
 "cors": false,
+"reliableHiddenOffsets": true,
+"boxModel": true,
 "doesNotAddBorder": true,
 "doesAddBorderForTableAndCells": true,
 "fixedPosition": true,
@@ -2907,7 +2922,7 @@ jQuery.text = function( elem ) {
 		ret = "";
 
 	if ( nodeType ) {
-		if ( nodeType === 1 ) {
+		if ( nodeType === 1 || nodeType === 9 ) {
 			// Use textContent || innerText for elements
 			if ( typeof elem.textContent === 'string' ) {
 				return elem.textContent;
@@ -3241,7 +3256,7 @@ jQuery.prototype.after = function() {
 			});
 		} else if ( arguments.length ) {
 			var set = this.pushStack( this, "after", arguments );
-			set.push.apply( set, jQuery(arguments[0]).toArray() );
+			set.push.apply( set, jQuery.clean(arguments) );
 			return set;
 		}
 	};
@@ -3254,7 +3269,7 @@ jQuery.prototype.ajaxComplete = function( f ){
 /// </param>
 /// <returns type="jQuery" />
 
-		return this.bind( o, f );
+		return this.on( o, f );
 	};
 jQuery.prototype.ajaxError = function( f ){
 /// <summary>
@@ -3265,7 +3280,7 @@ jQuery.prototype.ajaxError = function( f ){
 /// </param>
 /// <returns type="jQuery" />
 
-		return this.bind( o, f );
+		return this.on( o, f );
 	};
 jQuery.prototype.ajaxSend = function( f ){
 /// <summary>
@@ -3276,7 +3291,7 @@ jQuery.prototype.ajaxSend = function( f ){
 /// </param>
 /// <returns type="jQuery" />
 
-		return this.bind( o, f );
+		return this.on( o, f );
 	};
 jQuery.prototype.ajaxStart = function( f ){
 /// <summary>
@@ -3287,7 +3302,7 @@ jQuery.prototype.ajaxStart = function( f ){
 /// </param>
 /// <returns type="jQuery" />
 
-		return this.bind( o, f );
+		return this.on( o, f );
 	};
 jQuery.prototype.ajaxStop = function( f ){
 /// <summary>
@@ -3298,7 +3313,7 @@ jQuery.prototype.ajaxStop = function( f ){
 /// </param>
 /// <returns type="jQuery" />
 
-		return this.bind( o, f );
+		return this.on( o, f );
 	};
 jQuery.prototype.ajaxSuccess = function( f ){
 /// <summary>
@@ -3309,7 +3324,7 @@ jQuery.prototype.ajaxSuccess = function( f ){
 /// </param>
 /// <returns type="jQuery" />
 
-		return this.bind( o, f );
+		return this.on( o, f );
 	};
 jQuery.prototype.andSelf = function() {
 /// <summary>
@@ -3554,7 +3569,7 @@ jQuery.prototype.before = function() {
 				this.parentNode.insertBefore( elem, this );
 			});
 		} else if ( arguments.length ) {
-			var set = jQuery(arguments[0]);
+			var set = jQuery.clean( arguments );
 			set.push.apply( set, this.toArray() );
 			return this.pushStack( set, "before", arguments );
 		}
@@ -3600,7 +3615,7 @@ jQuery.prototype.blur = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.change = function( data, fn ) {
@@ -3624,7 +3639,7 @@ jQuery.prototype.change = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.children = function( until, selector ) {
@@ -3636,12 +3651,7 @@ jQuery.prototype.children = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -3657,7 +3667,7 @@ jQuery.prototype.children = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.clearQueue = function( type ) {
 /// <summary>
@@ -3691,7 +3701,7 @@ jQuery.prototype.click = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.clone = function( dataAndEvents, deepDataAndEvents ) {
@@ -3791,12 +3801,7 @@ jQuery.prototype.contents = function( until, selector ) {
 /// </summary>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -3812,7 +3817,7 @@ jQuery.prototype.contents = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.contextmenu = function( data, fn ) {
 
@@ -3822,7 +3827,7 @@ jQuery.prototype.contextmenu = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.css = function( name, value ) {
@@ -3918,12 +3923,12 @@ jQuery.prototype.data = function( key, value ) {
 
 		} else {
 			return this.each(function() {
-				var $this = jQuery( this ),
+				var self = jQuery( this ),
 					args = [ parts[0], value ];
 
-				$this.triggerHandler( "setData" + parts[1] + "!", args );
+				self.triggerHandler( "setData" + parts[1] + "!", args );
 				jQuery.data( this, key, value );
-				$this.triggerHandler( "changeData" + parts[1] + "!", args );
+				self.triggerHandler( "changeData" + parts[1] + "!", args );
 			});
 		}
 	};
@@ -3948,7 +3953,7 @@ jQuery.prototype.dblclick = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.delay = function( time, type ) {
@@ -4158,9 +4163,10 @@ jQuery.prototype.eq = function( i ) {
 /// </param>
 /// <returns type="jQuery" />
 
+		i = +i;
 		return i === -1 ?
 			this.slice( i ) :
-			this.slice( i, +i + 1 );
+			this.slice( i, i + 1 );
 	};
 jQuery.prototype.error = function( data, fn ) {
 /// <summary>
@@ -4182,7 +4188,7 @@ jQuery.prototype.error = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.extend = function() {
@@ -4418,7 +4424,7 @@ jQuery.prototype.focus = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.focusin = function( data, fn ) {
@@ -4441,7 +4447,7 @@ jQuery.prototype.focusin = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.focusout = function( data, fn ) {
@@ -4464,7 +4470,7 @@ jQuery.prototype.focusout = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.get = function( num ) {
@@ -4957,7 +4963,7 @@ jQuery.prototype.keydown = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.keypress = function( data, fn ) {
@@ -4981,7 +4987,7 @@ jQuery.prototype.keypress = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.keyup = function( data, fn ) {
@@ -5005,7 +5011,7 @@ jQuery.prototype.keyup = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.last = function() {
@@ -5165,7 +5171,7 @@ jQuery.prototype.mousedown = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.mouseenter = function( data, fn ) {
@@ -5189,7 +5195,7 @@ jQuery.prototype.mouseenter = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.mouseleave = function( data, fn ) {
@@ -5213,7 +5219,7 @@ jQuery.prototype.mouseleave = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.mousemove = function( data, fn ) {
@@ -5237,7 +5243,7 @@ jQuery.prototype.mousemove = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.mouseout = function( data, fn ) {
@@ -5261,7 +5267,7 @@ jQuery.prototype.mouseout = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.mouseover = function( data, fn ) {
@@ -5285,7 +5291,7 @@ jQuery.prototype.mouseover = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.mouseup = function( data, fn ) {
@@ -5309,7 +5315,7 @@ jQuery.prototype.mouseup = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.next = function( until, selector ) {
@@ -5321,12 +5327,7 @@ jQuery.prototype.next = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5342,7 +5343,7 @@ jQuery.prototype.next = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.nextAll = function( until, selector ) {
 /// <summary>
@@ -5353,12 +5354,7 @@ jQuery.prototype.nextAll = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5374,7 +5370,7 @@ jQuery.prototype.nextAll = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.nextUntil = function( until, selector ) {
 /// <summary>
@@ -5390,12 +5386,7 @@ jQuery.prototype.nextUntil = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5411,7 +5402,7 @@ jQuery.prototype.nextUntil = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.not = function( selector ) {
 /// <summary>
@@ -5636,7 +5627,7 @@ jQuery.prototype.one = function( types, selector, data, fn ) {
 	};
 jQuery.prototype.outerHeight = function( margin ) {
 /// <summary>
-///     Get the current computed height for the first element in the set of matched elements, including padding, border, and optionally margin.
+///     Get the current computed height for the first element in the set of matched elements, including padding, border, and optionally margin. Returns an integer (without "px") representation of the value or null if called on an empty set of elements.
 /// </summary>
 /// <param name="margin" type="Boolean">
 ///     A Boolean indicating whether to include the element's margin in the calculation.
@@ -5675,12 +5666,7 @@ jQuery.prototype.parent = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5696,7 +5682,7 @@ jQuery.prototype.parent = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.parents = function( until, selector ) {
 /// <summary>
@@ -5707,12 +5693,7 @@ jQuery.prototype.parents = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5728,7 +5709,7 @@ jQuery.prototype.parents = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.parentsUntil = function( until, selector ) {
 /// <summary>
@@ -5744,12 +5725,7 @@ jQuery.prototype.parentsUntil = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5765,7 +5741,7 @@ jQuery.prototype.parentsUntil = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.position = function() {
 /// <summary>
@@ -5858,12 +5834,7 @@ jQuery.prototype.prev = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5879,7 +5850,7 @@ jQuery.prototype.prev = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.prevAll = function( until, selector ) {
 /// <summary>
@@ -5890,12 +5861,7 @@ jQuery.prototype.prevAll = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5911,7 +5877,7 @@ jQuery.prototype.prevAll = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.prevUntil = function( until, selector ) {
 /// <summary>
@@ -5927,12 +5893,7 @@ jQuery.prototype.prevUntil = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -5948,7 +5909,7 @@ jQuery.prototype.prevUntil = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.promise = function( type, object ) {
 /// <summary>
@@ -6130,7 +6091,7 @@ jQuery.prototype.removeAttr = function( name ) {
 ///     Remove an attribute from each element in the set of matched elements.
 /// </summary>
 /// <param name="name" type="String">
-///     An attribute to remove.
+///     An attribute to remove; as of version 1.7, it can be a space-separated list of attributes.
 /// </param>
 /// <returns type="jQuery" />
 
@@ -6304,7 +6265,7 @@ jQuery.prototype.resize = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.scroll = function( data, fn ) {
@@ -6328,7 +6289,7 @@ jQuery.prototype.scroll = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.scrollLeft = function( val ) {
@@ -6442,7 +6403,7 @@ jQuery.prototype.select = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.serialize = function() {
@@ -6550,12 +6511,7 @@ jQuery.prototype.siblings = function( until, selector ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		var ret = jQuery.map( this, fn, until ),
-			// The variable 'args' was introduced in
-			// https://github.com/jquery/jquery/commit/52a0238
-			// to work around a bug in Chrome 10 (Dev) and should be removed when the bug is fixed.
-			// http://code.google.com/p/v8/issues/detail?id=1050
-			args = slice.call(arguments);
+		var ret = jQuery.map( this, fn, until );
 
 		if ( !runtil.test( name ) ) {
 			selector = until;
@@ -6571,7 +6527,7 @@ jQuery.prototype.siblings = function( until, selector ) {
 			ret = ret.reverse();
 		}
 
-		return this.pushStack( ret, name, args.join(",") );
+		return this.pushStack( ret, name, slice.call( arguments ).join(",") );
 	};
 jQuery.prototype.size = function() {
 /// <summary>
@@ -6680,7 +6636,7 @@ jQuery.prototype.stop = function( type, clearQueue, gotoEnd ) {
 		}
 
 		return this.each(function() {
-			var i,
+			var index,
 				hadTimers = false,
 				timers = jQuery.timers,
 				data = jQuery._data( this );
@@ -6690,33 +6646,33 @@ jQuery.prototype.stop = function( type, clearQueue, gotoEnd ) {
 				jQuery._unmark( true, this );
 			}
 
-			function stopQueue( elem, data, i ) {
-				var hooks = data[ i ];
-				jQuery.removeData( elem, i, true );
+			function stopQueue( elem, data, index ) {
+				var hooks = data[ index ];
+				jQuery.removeData( elem, index, true );
 				hooks.stop( gotoEnd );
 			}
 
 			if ( type == null ) {
-				for ( i in data ) {
-					if ( data[ i ].stop && i.indexOf(".run") === i.length - 4 ) {
-						stopQueue( this, data, i );
+				for ( index in data ) {
+					if ( data[ index ] && data[ index ].stop && index.indexOf(".run") === index.length - 4 ) {
+						stopQueue( this, data, index );
 					}
 				}
-			} else if ( data[ i = type + ".run" ] && data[ i ].stop ){
-				stopQueue( this, data, i );
+			} else if ( data[ index = type + ".run" ] && data[ index ].stop ){
+				stopQueue( this, data, index );
 			}
 
-			for ( i = timers.length; i--; ) {
-				if ( timers[ i ].elem === this && (type == null || timers[ i ].queue === type) ) {
+			for ( index = timers.length; index--; ) {
+				if ( timers[ index ].elem === this && (type == null || timers[ index ].queue === type) ) {
 					if ( gotoEnd ) {
 
 						// force the next step to be the last
-						timers[ i ]( true );
+						timers[ index ]( true );
 					} else {
-						timers[ i ].saveState();
+						timers[ index ].saveState();
 					}
 					hadTimers = true;
-					timers.splice( i, 1 );
+					timers.splice( index, 1 );
 				}
 			}
 
@@ -6749,7 +6705,7 @@ jQuery.prototype.submit = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.text = function( text ) {
@@ -6969,7 +6925,7 @@ jQuery.prototype.unload = function( data, fn ) {
 		}
 
 		return arguments.length > 0 ?
-			this.bind( name, data, fn ) :
+			this.on( name, null, data, fn ) :
 			this.trigger( name );
 	};
 jQuery.prototype.unwrap = function() {
@@ -7017,7 +6973,7 @@ jQuery.prototype.val = function( value ) {
 					ret == null ? "" : ret;
 			}
 
-			return undefined;
+			return;
 		}
 
 		isFunction = jQuery.isFunction( value );
@@ -7120,8 +7076,10 @@ jQuery.prototype.wrap = function( html ) {
 /// </param>
 /// <returns type="jQuery" />
 
-		return this.each(function() {
-			jQuery( this ).wrapAll( html );
+		var isFunction = jQuery.isFunction( html );
+
+		return this.each(function(i) {
+			jQuery( this ).wrapAll( isFunction ? html.call(this, i) : html );
 		});
 	};
 jQuery.prototype.wrapAll = function( html ) {
