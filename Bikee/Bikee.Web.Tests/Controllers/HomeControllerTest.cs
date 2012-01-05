@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Web.Mvc;
+﻿using System.Web.Mvc;
 using Bikee.Web.Controllers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Bikee;
 
 namespace Bikee.Web.Tests.Controllers
 {
@@ -22,7 +17,7 @@ namespace Bikee.Web.Tests.Controllers
 			ViewResult result = controller.Index() as ViewResult;
 
 			// Assert
-			Assert.AreEqual("Welcome to ASP.NET MVC!", result.ViewBag.Message);
+			Assert.AreEqual("Welcome to Bikee portal!", result.ViewBag.Message);
 		}
 
 		[TestMethod]

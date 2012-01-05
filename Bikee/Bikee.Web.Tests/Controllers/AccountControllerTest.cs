@@ -7,11 +7,9 @@ using System.Web.Security;
 using Bikee.Web.Controllers;
 using Bikee.Web.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Bikee;
 
 namespace Bikee.Web.Tests.Controllers
 {
-
 	[TestClass]
 	public class AccountControllerTest
 	{

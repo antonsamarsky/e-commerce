@@ -7,7 +7,6 @@ using System.Web.Security;
 
 namespace Bikee.Web.Models
 {
-
 	#region Models
 
 	public class ChangePasswordModel
@@ -238,9 +237,7 @@ namespace Bikee.Web.Models
 
 		public IEnumerable<ModelClientValidationRule> GetClientValidationRules(ModelMetadata metadata, ControllerContext context)
 		{
-			return new[]{
-                new ModelClientValidationStringLengthRule(FormatErrorMessage(metadata.GetDisplayName()), _minCharacters, int.MaxValue)
-            };
+			return new[] { new ModelClientValidationStringLengthRule(FormatErrorMessage(metadata.GetDisplayName()), _minCharacters, int.MaxValue) };
 		}
 	}
 	#endregion

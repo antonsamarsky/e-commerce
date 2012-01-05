@@ -7,7 +7,6 @@ namespace Bikee.Web.Controllers
 {
 	public class AccountController : Controller
 	{
-
 		public IFormsAuthenticationService FormsService { get; set; }
 		public IMembershipService MembershipService { get; set; }
 
