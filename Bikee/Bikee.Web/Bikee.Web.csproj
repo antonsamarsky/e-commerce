@@ -66,7 +66,14 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Models\AccountModels.cs" />
+    <Compile Include="Models\Security\AccountMembershipService.cs" />
+    <Compile Include="Models\Security\AccountValidation.cs" />
+    <Compile Include="Models\Security\ChangePasswordModel.cs" />
+    <Compile Include="Models\Security\FormsAuthenticationService.cs" />
+    <Compile Include="Models\Security\IFormsAuthenticationService.cs" />
+    <Compile Include="Models\Security\IMembershipService.cs" />
+    <Compile Include="Models\Security\LogOnModel.cs" />
+    <Compile Include="Models\Security\RegisterModel.cs" />
     <Compile Include="Models\ValidationAttributes\ValidatePasswordLengthAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
