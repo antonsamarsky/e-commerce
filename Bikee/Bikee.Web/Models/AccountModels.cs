@@ -87,8 +87,7 @@ namespace Bikee.Web.Models
 	{
 		private readonly MembershipProvider _provider;
 
-		public AccountMembershipService()
-			: this(null)
+		public AccountMembershipService() : this(null)
 		{
 		}
 

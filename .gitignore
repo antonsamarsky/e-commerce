@@ -8,3 +8,7 @@ Bikee/Bikee/obj
 *.suo
 Bikee/Bikee.Web/bin
 Bikee/Bikee.Web/obj
+Bikee/Bikee.Security/obj
+Bikee/Bikee.Security/bin
+Bikee/Bikee.Security.Tests/obj
+Bikee/Bikee.Security.Tests/bin
