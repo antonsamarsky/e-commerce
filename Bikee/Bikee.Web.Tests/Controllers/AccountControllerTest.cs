@@ -13,7 +13,6 @@ namespace Bikee.Web.Tests.Controllers
 	[TestClass]
 	public class AccountControllerTest
 	{
-
 		[TestMethod]
 		public void ChangePassword_Get_ReturnsView()
 		{
@@ -33,19 +32,19 @@ namespace Bikee.Web.Tests.Controllers
 		{
 			// Arrange
 			AccountController controller = GetAccountController();
-			ChangePasswordModel model = new ChangePasswordModel()
-			{
-				OldPassword = "goodOldPassword",
-				NewPassword = "goodNewPassword",
-				ConfirmPassword = "goodNewPassword"
-			};
+			var model = new ChangePasswordModel
+										{
+											OldPassword = "goodOldPassword",
+											NewPassword = "goodNewPassword",
+											ConfirmPassword = "goodNewPassword"
+										};
 
 			// Act
 			ActionResult result = controller.ChangePassword(model);
 
 			// Assert
 			Assert.IsInstanceOfType(result, typeof(RedirectToRouteResult));
-			RedirectToRouteResult redirectResult = (RedirectToRouteResult)result;
+			var redirectResult = (RedirectToRouteResult)result;
 			Assert.AreEqual("ChangePasswordSuccess", redirectResult.RouteValues["action"]);
 		}
 
@@ -54,21 +53,22 @@ namespace Bikee.Web.Tests.Controllers
 		{
 			// Arrange
 			AccountController controller = GetAccountController();
-			ChangePasswordModel model = new ChangePasswordModel()
-			{
-				OldPassword = "goodOldPassword",
-				NewPassword = "badNewPassword",
-				ConfirmPassword = "badNewPassword"
-			};
+			var model = new ChangePasswordModel
+										{
+											OldPassword = "goodOldPassword",
+											NewPassword = "badNewPassword",
+											ConfirmPassword = "badNewPassword"
+										};
 
 			// Act
 			ActionResult result = controller.ChangePassword(model);
 
 			// Assert
 			Assert.IsInstanceOfType(result, typeof(ViewResult));
-			ViewResult viewResult = (ViewResult)result;
+			var viewResult = (ViewResult)result;
 			Assert.AreEqual(model, viewResult.ViewData.Model);
-			Assert.AreEqual("The current password is incorrect or the new password is invalid.", controller.ModelState[""].Errors[0].ErrorMessage);
+			Assert.AreEqual("The current password is incorrect or the new password is invalid.",
+											controller.ModelState[""].Errors[0].ErrorMessage);
 			Assert.AreEqual(10, viewResult.ViewData["PasswordLength"]);
 		}
 
@@ -77,12 +77,12 @@ namespace Bikee.Web.Tests.Controllers
 		{
 			// Arrange
 			AccountController controller = GetAccountController();
-			ChangePasswordModel model = new ChangePasswordModel()
-			{
-				OldPassword = "goodOldPassword",
-				NewPassword = "goodNewPassword",
-				ConfirmPassword = "goodNewPassword"
-			};
+			var model = new ChangePasswordModel
+										{
+											OldPassword = "goodOldPassword",
+											NewPassword = "goodNewPassword",
+											ConfirmPassword = "goodNewPassword"
+										};
 			controller.ModelState.AddModelError("", "Dummy error message.");
 
 			// Act
@@ -90,7 +90,7 @@ namespace Bikee.Web.Tests.Controllers
 
 			// Assert
 			Assert.IsInstanceOfType(result, typeof(ViewResult));
-			ViewResult viewResult = (ViewResult)result;
+			var viewResult = (ViewResult)result;
 			Assert.AreEqual(model, viewResult.ViewData.Model);
 			Assert.AreEqual(10, viewResult.ViewData["PasswordLength"]);
 		}
@@ -119,7 +119,7 @@ namespace Bikee.Web.Tests.Controllers
 
 			// Assert
 			Assert.IsInstanceOfType(result, typeof(RedirectToRouteResult));
-			RedirectToRouteResult redirectResult = (RedirectToRouteResult)result;
+			var redirectResult = (RedirectToRouteResult)result;
 			Assert.AreEqual("Home", redirectResult.RouteValues["controller"]);
 			Assert.AreEqual("Index", redirectResult.RouteValues["action"]);
 			Assert.IsTrue(((MockFormsAuthenticationService)controller.FormsService).SignOut_WasCalled);
@@ -143,19 +143,19 @@ namespace Bikee.Web.Tests.Controllers
 		{
 			// Arrange
 			AccountController controller = GetAccountController();
-			LogOnModel model = new LogOnModel()
-			{
-				UserName = "someUser",
-				Password = "goodPassword",
-				RememberMe = false
-			};
+			var model = new LogOnModel
+										{
+											UserName = "someUser",
+											Password = "goodPassword",
+											RememberMe = false
+										};
 
 			// Act
 			ActionResult result = controller.LogOn(model, null);
 
 			// Assert
 			Assert.IsInstanceOfType(result, typeof(RedirectToRouteResult));
-			RedirectToRouteResult redirectResult = (RedirectToRouteResult)result;
+			var redirectResult = (RedirectToRouteResult)result;
 			Assert.AreEqual("Home", redirectResult.RouteValues["controller"]);
 			Assert.AreEqual("Index", redirectResult.RouteValues["action"]);
 			Assert.IsTrue(((MockFormsAuthenticationService)controller.FormsService).SignIn_WasCalled);
@@ -166,19 +166,19 @@ namespace Bikee.Web.Tests.Controllers
 		{
 			// Arrange
 			AccountController controller = GetAccountController();
-			LogOnModel model = new LogOnModel()
-			{
-				UserName = "someUser",
-				Password = "goodPassword",
-				RememberMe = false
-			};
+			var model = new LogOnModel
+										{
+											UserName = "someUser",
+											Password = "goodPassword",
+											RememberMe = false
+										};
 
 			// Act
 			ActionResult result = controller.LogOn(model, "/someUrl");
 
 			// Assert
 			Assert.IsInstanceOfType(result, typeof(RedirectResult));
-			RedirectResult redirectResult = (RedirectResult)result;
+			var redirectResult = (RedirectResult)result;
 			Assert.AreEqual("/someUrl", redirectResult.Url);
 			Assert.IsTrue(((MockFormsAuthenticationService)controller.FormsService).SignIn_WasCalled);
 		}
@@ -188,19 +188,19 @@ namespace Bikee.Web.Tests.Controllers
 		{
 			// Arrange
 			AccountController controller = GetAccountController();
-			LogOnModel model = new LogOnModel()
-			{
-				UserName = "someUser",
-				Password = "goodPassword",
-				RememberMe = false
-			};
+			var model = new LogOnModel
+										{
+											UserName = "someUser",
+											Password = "goodPassword",
+											RememberMe = false
+										};
 
 			// Act
 			ActionResult result = controller.LogOn(model, "http://malicious.example.net");
 
 			// Assert
 			Assert.IsInstanceOfType(result, typeof(RedirectToRouteResult));
-			RedirectToRouteResult redirectResult = (RedirectToRouteResult)result;
+			var redirectResult = (RedirectToRouteResult)result;
 			Assert.AreEqual("Home", redirectResult.RouteValues["controller"]);
 			Assert.AreEqual("Index", redirectResult.RouteValues["action"]);
 			Assert.IsTrue(((MockFormsAuthenticationService)controller.FormsService).SignIn_WasCalled);
@@ -211,12 +211,12 @@ namespace Bikee.Web.Tests.Controllers
 		{
 			// Arrange
 			AccountController controller = GetAccountController();
-			LogOnModel model = new LogOnModel()
-			{
-				UserName = "someUser",
-				Password = "goodPassword",
-				RememberMe = false
-			};
+			var model = new LogOnModel
+										{
+											UserName = "someUser",
+											Password = "goodPassword",
+											RememberMe = false
+										};
 			controller.ModelState.AddModelError("", "Dummy error message.");
 
 			// Act
@@ -224,7 +224,7 @@ namespace Bikee.Web.Tests.Controllers
 
 			// Assert
 			Assert.IsInstanceOfType(result, typeof(ViewResult));
-			ViewResult viewResult = (ViewResult)result;
+			var viewResult = (ViewResult)result;
 			Assert.AreEqual(model, viewResult.ViewData.Model);
 		}
 
@@ -233,19 +233,19 @@ namespace Bikee.Web.Tests.Controllers
 		{
 			// Arrange
 			AccountController controller = GetAccountController();
-			LogOnModel model = new LogOnModel()
-			{
-				UserName = "someUser",
-				Password = "badPassword",
-				RememberMe = false
-			};
+			var model = new LogOnModel
+										{
+											UserName = "someUser",
+											Password = "badPassword",
+											RememberMe = false
+										};
 
 			// Act
 			ActionResult result = controller.LogOn(model, null);
 
 			// Assert
 			Assert.IsInstanceOfType(result, typeof(ViewResult));
-			ViewResult viewResult = (ViewResult)result;
+			var viewResult = (ViewResult)result;
 			Assert.AreEqual(model, viewResult.ViewData.Model);
 			Assert.AreEqual("The user name or password provided is incorrect.", controller.ModelState[""].Errors[0].ErrorMessage);
 		}
@@ -269,20 +269,20 @@ namespace Bikee.Web.Tests.Controllers
 		{
 			// Arrange
 			AccountController controller = GetAccountController();
-			RegisterModel model = new RegisterModel()
-			{
-				UserName = "someUser",
-				Email = "goodEmail",
-				Password = "goodPassword",
-				ConfirmPassword = "goodPassword"
-			};
+			var model = new RegisterModel
+										{
+											UserName = "someUser",
+											Email = "goodEmail",
+											Password = "goodPassword",
+											ConfirmPassword = "goodPassword"
+										};
 
 			// Act
 			ActionResult result = controller.Register(model);
 
 			// Assert
 			Assert.IsInstanceOfType(result, typeof(RedirectToRouteResult));
-			RedirectToRouteResult redirectResult = (RedirectToRouteResult)result;
+			var redirectResult = (RedirectToRouteResult)result;
 			Assert.AreEqual("Home", redirectResult.RouteValues["controller"]);
 			Assert.AreEqual("Index", redirectResult.RouteValues["action"]);
 		}
@@ -292,22 +292,23 @@ namespace Bikee.Web.Tests.Controllers
 		{
 			// Arrange
 			AccountController controller = GetAccountController();
-			RegisterModel model = new RegisterModel()
-			{
-				UserName = "duplicateUser",
-				Email = "goodEmail",
-				Password = "goodPassword",
-				ConfirmPassword = "goodPassword"
-			};
+			var model = new RegisterModel
+										{
+											UserName = "duplicateUser",
+											Email = "goodEmail",
+											Password = "goodPassword",
+											ConfirmPassword = "goodPassword"
+										};
 
 			// Act
 			ActionResult result = controller.Register(model);
 
 			// Assert
 			Assert.IsInstanceOfType(result, typeof(ViewResult));
-			ViewResult viewResult = (ViewResult)result;
+			var viewResult = (ViewResult)result;
 			Assert.AreEqual(model, viewResult.ViewData.Model);
-			Assert.AreEqual("Username already exists. Please enter a different user name.", controller.ModelState[""].Errors[0].ErrorMessage);
+			Assert.AreEqual("Username already exists. Please enter a different user name.",
+											controller.ModelState[""].Errors[0].ErrorMessage);
 			Assert.AreEqual(10, viewResult.ViewData["PasswordLength"]);
 		}
 
@@ -316,13 +317,13 @@ namespace Bikee.Web.Tests.Controllers
 		{
 			// Arrange
 			AccountController controller = GetAccountController();
-			RegisterModel model = new RegisterModel()
-			{
-				UserName = "someUser",
-				Email = "goodEmail",
-				Password = "goodPassword",
-				ConfirmPassword = "goodPassword"
-			};
+			var model = new RegisterModel
+										{
+											UserName = "someUser",
+											Email = "goodEmail",
+											Password = "goodPassword",
+											ConfirmPassword = "goodPassword"
+										};
 			controller.ModelState.AddModelError("", "Dummy error message.");
 
 			// Act
@@ -330,32 +331,36 @@ namespace Bikee.Web.Tests.Controllers
 
 			// Assert
 			Assert.IsInstanceOfType(result, typeof(ViewResult));
-			ViewResult viewResult = (ViewResult)result;
+			var viewResult = (ViewResult)result;
 			Assert.AreEqual(model, viewResult.ViewData.Model);
 			Assert.AreEqual(10, viewResult.ViewData["PasswordLength"]);
 		}
 
 		private static AccountController GetAccountController()
 		{
-			RequestContext requestContext = new RequestContext(new MockHttpContext(), new RouteData());
-			AccountController controller = new AccountController()
-			{
-				FormsService = new MockFormsAuthenticationService(),
-				MembershipService = new MockMembershipService(),
-				Url = new UrlHelper(requestContext),
-			};
-			controller.ControllerContext = new ControllerContext()
-			{
-				Controller = controller,
-				RequestContext = requestContext
-			};
+			var requestContext = new RequestContext(new MockHttpContext(), new RouteData());
+			var controller = new AccountController
+												{
+													FormsService = new MockFormsAuthenticationService(),
+													MembershipService = new MockMembershipService(),
+													Url = new UrlHelper(requestContext),
+												};
+			controller.ControllerContext = new ControllerContext
+																			{
+																				Controller = controller,
+																				RequestContext = requestContext
+																			};
 			return controller;
 		}
+
+		#region Nested type: MockFormsAuthenticationService
 
 		private class MockFormsAuthenticationService : IFormsAuthenticationService
 		{
 			public bool SignIn_WasCalled;
 			public bool SignOut_WasCalled;
+
+			#region IFormsAuthenticationService Members
 
 			public void SignIn(string userName, bool createPersistentCookie)
 			{
@@ -370,33 +375,34 @@ namespace Bikee.Web.Tests.Controllers
 			{
 				SignOut_WasCalled = true;
 			}
+
+			#endregion
 		}
+
+		#endregion
+
+		#region Nested type: MockHttpContext
 
 		private class MockHttpContext : HttpContextBase
 		{
-			private readonly IPrincipal _user = new GenericPrincipal(new GenericIdentity("someUser"), null /* roles */);
 			private readonly HttpRequestBase _request = new MockHttpRequest();
+			private readonly IPrincipal _user = new GenericPrincipal(new GenericIdentity("someUser"), null /* roles */);
 
 			public override IPrincipal User
 			{
-				get
-				{
-					return _user;
-				}
-				set
-				{
-					base.User = value;
-				}
+				get { return _user; }
+				set { base.User = value; }
 			}
 
 			public override HttpRequestBase Request
 			{
-				get
-				{
-					return _request;
-				}
+				get { return _request; }
 			}
 		}
+
+		#endregion
+
+		#region Nested type: MockHttpRequest
 
 		private class MockHttpRequest : HttpRequestBase
 		{
@@ -404,15 +410,18 @@ namespace Bikee.Web.Tests.Controllers
 
 			public override Uri Url
 			{
-				get
-				{
-					return _url;
-				}
+				get { return _url; }
 			}
 		}
 
+		#endregion
+
+		#region Nested type: MockMembershipService
+
 		private class MockMembershipService : IMembershipService
 		{
+			#region IMembershipService Members
+
 			public int MinPasswordLength
 			{
 				get { return 10; }
@@ -441,7 +450,10 @@ namespace Bikee.Web.Tests.Controllers
 			{
 				return (userName == "someUser" && oldPassword == "goodOldPassword" && newPassword == "goodNewPassword");
 			}
+
+			#endregion
 		}
 
+		#endregion
 	}
 }
