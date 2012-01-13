@@ -5,8 +5,7 @@ using System.Web.Mvc;
 using System.Web.Routing;
 using System.Web.Security;
 using Bikee.Web.Controllers;
-using Bikee.Web.Models;
-using Bikee.Web.Models.AccountModel;
+using Bikee.Web.Models.Security;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Bikee.Web.Tests.Controllers

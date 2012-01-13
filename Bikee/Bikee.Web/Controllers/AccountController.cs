@@ -1,7 +1,7 @@
 ﻿using System.Web.Mvc;
 using System.Web.Routing;
 using System.Web.Security;
-using Bikee.Web.Models.AccountModel;
+using Bikee.Web.Models.Security;
 
 namespace Bikee.Web.Controllers
 {

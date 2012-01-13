@@ -2,7 +2,7 @@
 using System.Web.Mvc;
 using Bikee.Web.Models.ValidationAttributes;
 
-namespace Bikee.Web.Models.AccountModel
+namespace Bikee.Web.Models.Security
 {
 	public class RegisterModel
 	{

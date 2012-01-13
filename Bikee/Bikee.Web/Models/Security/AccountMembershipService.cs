@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Web.Security;
 
-namespace Bikee.Web.Models.AccountModel
+namespace Bikee.Web.Models.Security
 {
 	public class AccountMembershipService : IMembershipService
 	{

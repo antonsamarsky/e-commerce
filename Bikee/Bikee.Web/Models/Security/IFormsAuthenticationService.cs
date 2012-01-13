@@ -1,4 +1,4 @@
-﻿namespace Bikee.Web.Models.AccountModel
+﻿namespace Bikee.Web.Models.Security
 {
 	public interface IFormsAuthenticationService
 	{
