@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Security", "Bikee.Sec
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Security.Tests", "Bikee.Security.Tests\Bikee.Security.Tests.csproj", "{9DBE99EA-B5C4-4734-ADFD-8D4F42D55175}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{89527138-DEA1-45E5-A857-BB15EF3D15D7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Bikee", "Bikee", "{FEBB7EB0-15F5-4A78-8455-63543B9D604E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,5 +38,11 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F550221E-0D71-4140-9981-119CCCE5C2C3} = {89527138-DEA1-45E5-A857-BB15EF3D15D7}
+		{9DBE99EA-B5C4-4734-ADFD-8D4F42D55175} = {89527138-DEA1-45E5-A857-BB15EF3D15D7}
+		{CA841517-A00F-447F-B4EF-2115EADC43AB} = {FEBB7EB0-15F5-4A78-8455-63543B9D604E}
+		{78F11056-68FA-4DCA-9E3E-FC7C9A4FCCB6} = {FEBB7EB0-15F5-4A78-8455-63543B9D604E}
 	EndGlobalSection
 EndGlobal
