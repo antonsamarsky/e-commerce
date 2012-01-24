@@ -1,17 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Web", "Bikee.Web\Bikee.Web.csproj", "{78F11056-68FA-4DCA-9E3E-FC7C9A4FCCB6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Web", "src\Bikee.Web\Bikee.Web.csproj", "{78F11056-68FA-4DCA-9E3E-FC7C9A4FCCB6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Web.Tests", "Bikee.Web.Tests\Bikee.Web.Tests.csproj", "{F550221E-0D71-4140-9981-119CCCE5C2C3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Web.Tests", "src\Bikee.Web.Tests\Bikee.Web.Tests.csproj", "{F550221E-0D71-4140-9981-119CCCE5C2C3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{89527138-DEA1-45E5-A857-BB15EF3D15D7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Bikee", "Bikee", "{FEBB7EB0-15F5-4A78-8455-63543B9D604E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Security.Mongo", "Bikee.Security.Mongo\Bikee.Security.Mongo.csproj", "{326A083D-3589-441A-B7E4-67BAE48E80B2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Security.Mongo", "src\Bikee.Security.Mongo\Bikee.Security.Mongo.csproj", "{326A083D-3589-441A-B7E4-67BAE48E80B2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Security.Mongo.Tests", "Bikee.Security.Mongo.Tests\Bikee.Security.Mongo.Tests.csproj", "{8054C282-ABDF-496E-9DF6-98ECB6A5FF82}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Security.Mongo.Tests", "src\Bikee.Security.Mongo.Tests\Bikee.Security.Mongo.Tests.csproj", "{8054C282-ABDF-496E-9DF6-98ECB6A5FF82}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
