@@ -5,9 +5,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Web", "Bikee.Web\Bike
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Web.Tests", "Bikee.Web.Tests\Bikee.Web.Tests.csproj", "{F550221E-0D71-4140-9981-119CCCE5C2C3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Security", "Bikee.Security\Bikee.Security.csproj", "{CA841517-A00F-447F-B4EF-2115EADC43AB}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{89527138-DEA1-45E5-A857-BB15EF3D15D7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Security.Tests", "Bikee.Security.Tests\Bikee.Security.Tests.csproj", "{9DBE99EA-B5C4-4734-ADFD-8D4F42D55175}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Bikee", "Bikee", "{FEBB7EB0-15F5-4A78-8455-63543B9D604E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Security.Mongo", "Bikee.Security.Mongo\Bikee.Security.Mongo.csproj", "{326A083D-3589-441A-B7E4-67BAE48E80B2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Security.Mongo.Tests", "Bikee.Security.Mongo.Tests\Bikee.Security.Mongo.Tests.csproj", "{8054C282-ABDF-496E-9DF6-98ECB6A5FF82}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,16 +27,22 @@ Global
 		{F550221E-0D71-4140-9981-119CCCE5C2C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F550221E-0D71-4140-9981-119CCCE5C2C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F550221E-0D71-4140-9981-119CCCE5C2C3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CA841517-A00F-447F-B4EF-2115EADC43AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CA841517-A00F-447F-B4EF-2115EADC43AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CA841517-A00F-447F-B4EF-2115EADC43AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CA841517-A00F-447F-B4EF-2115EADC43AB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9DBE99EA-B5C4-4734-ADFD-8D4F42D55175}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9DBE99EA-B5C4-4734-ADFD-8D4F42D55175}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9DBE99EA-B5C4-4734-ADFD-8D4F42D55175}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9DBE99EA-B5C4-4734-ADFD-8D4F42D55175}.Release|Any CPU.Build.0 = Release|Any CPU
+		{326A083D-3589-441A-B7E4-67BAE48E80B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{326A083D-3589-441A-B7E4-67BAE48E80B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{326A083D-3589-441A-B7E4-67BAE48E80B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{326A083D-3589-441A-B7E4-67BAE48E80B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8054C282-ABDF-496E-9DF6-98ECB6A5FF82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8054C282-ABDF-496E-9DF6-98ECB6A5FF82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8054C282-ABDF-496E-9DF6-98ECB6A5FF82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8054C282-ABDF-496E-9DF6-98ECB6A5FF82}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F550221E-0D71-4140-9981-119CCCE5C2C3} = {89527138-DEA1-45E5-A857-BB15EF3D15D7}
+		{8054C282-ABDF-496E-9DF6-98ECB6A5FF82} = {89527138-DEA1-45E5-A857-BB15EF3D15D7}
+		{78F11056-68FA-4DCA-9E3E-FC7C9A4FCCB6} = {FEBB7EB0-15F5-4A78-8455-63543B9D604E}
+		{326A083D-3589-441A-B7E4-67BAE48E80B2} = {FEBB7EB0-15F5-4A78-8455-63543B9D604E}
 	EndGlobalSection
 EndGlobal
