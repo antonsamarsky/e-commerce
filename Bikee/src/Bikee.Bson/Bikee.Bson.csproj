@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{8054C282-ABDF-496E-9DF6-98ECB6A5FF82}</ProjectGuid>
+    <ProjectGuid>{3604FA0E-FD33-4CDC-8DF9-3A77D210000E}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Bikee.Security.Mongo.Tests</RootNamespace>
-    <AssemblyName>Bikee.Security.Mongo.Tests</AssemblyName>
+    <RootNamespace>Bikee.Bson</RootNamespace>
+    <AssemblyName>Bikee.Bson</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -34,40 +34,15 @@
     <Reference Include="MongoDB.Bson">
       <HintPath>..\..\packages\mongocsharpdriver.1.3.1\lib\net35\MongoDB.Bson.dll</HintPath>
     </Reference>
-    <Reference Include="MongoDB.Driver">
-      <HintPath>..\..\packages\mongocsharpdriver.1.3.1\lib\net35\MongoDB.Driver.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework, Version=2.5.10.11092, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
-      <HintPath>..\packages\NUnit.2.5.10.11092\lib\nunit.framework.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Web.ApplicationServices" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MembershipProviderTest.cs" />
+    <Compile Include="BsonMap.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RoleProviderTest.cs" />
-    <Compile Include="UserBsonMapTest.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Bikee.Bson\Bikee.Bson.csproj">
-      <Project>{3604FA0E-FD33-4CDC-8DF9-3A77D210000E}</Project>
-      <Name>Bikee.Bson</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Bikee.Security.Domain\Bikee.Security.Domain.csproj">
-      <Project>{BD31D54C-596B-403B-A068-CE2E5393D472}</Project>
-      <Name>Bikee.Security.Domain</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Bikee.Security.Mongo\Bikee.Security.Mongo.csproj">
-      <Project>{326A083D-3589-441A-B7E4-67BAE48E80B2}</Project>
-      <Name>Bikee.Security.Mongo</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
