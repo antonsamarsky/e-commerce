@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Security.Domain", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Bson", "src\Bikee.Bson\Bikee.Bson.csproj", "{3604FA0E-FD33-4CDC-8DF9-3A77D210000E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Mongo.Tests", "src\Bikee.Mongo.Tests\Bikee.Mongo.Tests.csproj", "{A721801B-0CE2-4035-8C01-1D95D0EF78AE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,10 @@ Global
 		{3604FA0E-FD33-4CDC-8DF9-3A77D210000E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3604FA0E-FD33-4CDC-8DF9-3A77D210000E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3604FA0E-FD33-4CDC-8DF9-3A77D210000E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A721801B-0CE2-4035-8C01-1D95D0EF78AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A721801B-0CE2-4035-8C01-1D95D0EF78AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A721801B-0CE2-4035-8C01-1D95D0EF78AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A721801B-0CE2-4035-8C01-1D95D0EF78AE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -58,5 +64,6 @@ Global
 		{3604FA0E-FD33-4CDC-8DF9-3A77D210000E} = {FEBB7EB0-15F5-4A78-8455-63543B9D604E}
 		{F550221E-0D71-4140-9981-119CCCE5C2C3} = {89527138-DEA1-45E5-A857-BB15EF3D15D7}
 		{8054C282-ABDF-496E-9DF6-98ECB6A5FF82} = {89527138-DEA1-45E5-A857-BB15EF3D15D7}
+		{A721801B-0CE2-4035-8C01-1D95D0EF78AE} = {89527138-DEA1-45E5-A857-BB15EF3D15D7}
 	EndGlobalSection
 EndGlobal

@@ -14,7 +14,10 @@ namespace Bikee.Bson
 				{
 					cm.AutoMap();
 					//cm.IdMemberMap.SetIdGenerator(BsonObjectIdGenerator.Instance);
-					this.Map(cm);
+					if (this.Map != null)
+					{
+						this.Map(cm);
+					}
 				});
 			}
 		}

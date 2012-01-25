@@ -1,14 +1,14 @@
 ﻿using System;
-using System.Configuration;
 using System.Web.Security;
+using Bikee.Mongo.Tests;
 using Bikee.Security.Domain;
-using MongoDB.Driver;
+using MongoDB.Bson;
 using NUnit.Framework;
 
 namespace Bikee.Security.Mongo.Tests
 {
 	[TestFixture]
-	public class UserBsonMapTest
+	public class UserBsonMapTest : MongoTestBase
 	{
 		private User user;
 
@@ -17,6 +17,7 @@ namespace Bikee.Security.Mongo.Tests
 		{
 			this.user = new User
 			{
+				Id = ObjectId.GenerateNewId(),
 				Username = "Username value",
 				LowercaseUsername = "LowercaseUsername value",
 				DisplayName = "DisplayName value",
@@ -46,9 +47,7 @@ namespace Bikee.Security.Mongo.Tests
 		public void Map()
 		{
 			new UserBsonMap();
-			MongoServer server = MongoServer.Create(); // connect to localhost
-			MongoDatabase database = server.GetDatabase("bikee");
-			var users = database.GetCollection<User>("users");
+			var users = this.MongoDatabase.GetCollection<User>("users");
 			users.Insert(this.user);
 		}
 	}
