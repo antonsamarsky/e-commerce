@@ -1,6 +1,5 @@
 ﻿using System;
 using MongoDB.Bson.Serialization;
-using MongoDB.Bson.Serialization.IdGenerators;
 
 namespace Bikee.Bson
 {
@@ -8,18 +7,19 @@ namespace Bikee.Bson
 	{
 		protected BsonMap()
 		{
-			if (!BsonClassMap.IsClassMapRegistered(typeof(T)))
+			if (BsonClassMap.IsClassMapRegistered(typeof(T)))
 			{
-				BsonClassMap.RegisterClassMap<T>(cm =>
-				{
-					cm.AutoMap();
-					//cm.IdMemberMap.SetIdGenerator(BsonObjectIdGenerator.Instance);
-					if (this.Map != null)
-					{
-						this.Map(cm);
-					}
-				});
+				return;
 			}
+
+			BsonClassMap.RegisterClassMap<T>(cm =>
+			{
+				cm.AutoMap();
+				if (this.Map != null)
+				{
+					this.Map(cm);
+				}
+			});
 		}
 
 		protected Action<BsonClassMap<T>> Map { private get; set; }

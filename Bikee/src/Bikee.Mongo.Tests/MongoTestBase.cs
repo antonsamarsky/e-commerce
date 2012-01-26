@@ -1,5 +1,5 @@
-﻿
-using System.Configuration;
+﻿using System.Configuration;
+using MongoDB.Bson.Serialization.Options;
 using MongoDB.Driver;
 using NUnit.Framework;
 
@@ -20,7 +20,14 @@ namespace Bikee.Mongo.Tests
 												: MongoServer.Create(connectionString);
 
 			string databaseName = ConfigurationManager.AppSettings["testDatabaseName"] ?? "bikee_test";
+			if (this.MongoServer.DatabaseExists(databaseName))
+			{
+				this.MongoServer.DropDatabase(databaseName);
+			}
+
 			this.MongoDatabase = this.MongoServer.GetDatabase(databaseName);
+
+			DateTimeSerializationOptions.Defaults = DateTimeSerializationOptions.LocalInstance;
 		}
 
 		[TestFixtureTearDown]
