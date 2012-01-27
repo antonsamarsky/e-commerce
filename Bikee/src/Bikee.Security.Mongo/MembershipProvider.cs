@@ -1,10 +1,138 @@
-﻿using System.Web.Security;
+﻿using System;
+using System.Collections.Specialized;
+using System.Configuration;
+using System.Configuration.Provider;
+using System.Web.Configuration;
+using System.Web.Security;
+using Bikee.Security.Domain;
+using MongoDB.Driver;
 
 namespace Bikee.Security.Mongo
 {
-	public class MembershipProvide: System.Web.Security.MembershipProvider
+	// How to: Sample Membership Provider Implementation :
+	// http://msdn.microsoft.com/en-us/library/ie/6tc47t75.aspx
+	public class MembershipProvide : MembershipProvider
 	{
+		private string eventSource = "MongoMembershipProvider";
+		private string eventLog = "Application";
+		private string exceptionMessage = "An exception occurred. Please check the Event Log.";
+		private string applicationName;
+		private int newPasswordLength = 8;
+		private string connectionString;
+		private int maxInvalidPasswordAttempts;
+		private int passwordAttemptWindow;
+		private int minRequiredNonAlphanumericCharacters;
+		private int minRequiredPasswordLength;
+		private string passwordStrengthRegularExpression;
+		private bool enablePasswordReset;
+		private bool enablePasswordRetrieval;
+		private bool requiresQuestionAndAnswer;
+		private bool requiresUniqueEmail;
+		private string userCollectionName;
+		private MembershipPasswordFormat passwordFormat;
+		private MachineKeySection machineKey;
+
+		#region Custom Public Properties
+
+		public bool WriteExceptionsToEventLog { get; set; }
+		public string InvalidUsernameCharacters { get; protected set; }
+		public string InvalidEmailCharacters { get; protected set; }
+		public string CollectionName { get; protected set; }
+		public MongoCollection<User> Collection { get; protected set; }
+		public MongoDatabase Database { get; protected set; }
+
+		#endregion
+
 		#region Overrides of MembershipProvider
+
+		/// <summary>
+		/// Initializes the provider.
+		/// </summary>
+		/// <param name="name">The friendly name of the provider.</param>
+		/// <param name="config">A collection of the name/value pairs representing the provider-specific attributes specified in the configuration for this provider.</param>
+		/// <exception cref="T:System.ArgumentNullException">The name of the provider is null.</exception>
+		///   
+		/// <exception cref="T:System.ArgumentException">The name of the provider has a length of zero.</exception>
+		///   
+		/// <exception cref="T:System.InvalidOperationException">An attempt is made to call <see cref="M:System.Configuration.Provider.ProviderBase.Initialize(System.String,System.Collections.Specialized.NameValueCollection)"/> on a provider after the provider has already been initialized.</exception>
+		public override void Initialize(string name, NameValueCollection config)
+		{
+			if (config == null)
+			{
+				throw new ArgumentNullException("config");
+			}
+
+			if (string.IsNullOrEmpty(name))
+			{
+				name = "MongoMembershipProvider";
+			}
+
+			if (string.IsNullOrEmpty(config["description"]))
+			{
+				config.Remove("description");
+				config.Add("description", "Sample ODBC Membership provider");
+			}
+
+			base.Initialize(name, config);
+
+			this.applicationName = Utils.GetConfigValue(config["applicationName"], System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath);
+			this.maxInvalidPasswordAttempts = Utils.GetConfigValue(config["maxInvalidPasswordAttempts"], 5);
+			this.passwordAttemptWindow = Utils.GetConfigValue(config["passwordAttemptWindow"], 10);
+			this.minRequiredNonAlphanumericCharacters = Utils.GetConfigValue(config["minRequiredNonAlphanumericCharacters"], 1);
+			this.minRequiredPasswordLength = Utils.GetConfigValue(config["minRequiredPasswordLength"], 7);
+			this.passwordStrengthRegularExpression = Utils.GetConfigValue(config["passwordStrengthRegularExpression"], "");
+			this.enablePasswordReset = Utils.GetConfigValue(config["enablePasswordReset"], true);
+			this.enablePasswordRetrieval = Utils.GetConfigValue(config["enablePasswordRetrieval"], false);
+			this.requiresQuestionAndAnswer = Utils.GetConfigValue(config["requiresQuestionAndAnswer"], false);
+			this.requiresUniqueEmail = Utils.GetConfigValue(config["requiresUniqueEmail"], true);
+
+			this.userCollectionName = Utils.GetConfigValue(config["userCollectionName"], "users");
+
+			this.InvalidUsernameCharacters = Utils.GetConfigValue(config["invalidUsernameCharacters"], ",%");
+			this.InvalidEmailCharacters = Utils.GetConfigValue(config["invalidEmailCharacters"], ",%");
+			this.WriteExceptionsToEventLog = Utils.GetConfigValue(config["writeExceptionsToEventLog"], true);
+
+			string passwordFormatConfig = config["passwordFormat"] ?? "Hashed";
+			switch (passwordFormatConfig)
+			{
+				case "Hashed":
+					this.passwordFormat = MembershipPasswordFormat.Hashed;
+					break;
+				case "Encrypted":
+					this.passwordFormat = MembershipPasswordFormat.Encrypted;
+					break;
+				case "Clear":
+					this.passwordFormat = MembershipPasswordFormat.Clear;
+					break;
+				default:
+					throw new ProviderException("Password format not supported.");
+			}
+
+			if ((this.passwordFormat == MembershipPasswordFormat.Hashed) && EnablePasswordRetrieval)
+			{
+				throw new ProviderException("Configured settings are invalid: Hashed passwords cannot be retrieved. Either set the password format to different type, or set supportsPasswordRetrieval to false.");
+			}
+
+			var connectionStringSettings = ConfigurationManager.ConnectionStrings[config["connectionStringName"]];
+			if (connectionStringSettings == null || string.IsNullOrEmpty(connectionStringSettings.ConnectionString.Trim()))
+			{
+				throw new ProviderException("Connection string cannot be blank.");
+			}
+
+			this.connectionString = connectionStringSettings.ConnectionString;
+
+			// Get encryption and decryption key information from the configuration.
+			var webConfig = WebConfigurationManager.OpenWebConfiguration(System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath);
+			this.machineKey = (MachineKeySection)webConfig.GetSection("system.web/machineKey");
+
+			if (machineKey.ValidationKey.Contains("AutoGenerate") || PasswordFormat != MembershipPasswordFormat.Clear)
+			{
+				throw new ProviderException("Hashed or Encrypted passwords are not supported with auto-generated keys.");
+			}
+
+			// TODO: Initialize MongoDB Server
+			// TODO: Register user map
+		}
 
 		/// <summary>
 		/// Adds a new membership user to the data source.
@@ -280,7 +408,7 @@ namespace Bikee.Security.Mongo
 		/// </returns>
 		public override MembershipPasswordFormat PasswordFormat
 		{
-			get { throw new System.NotImplementedException(); }
+			get { return this.passwordFormat; }
 		}
 
 		/// <summary>
