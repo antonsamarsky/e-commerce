@@ -5,13 +5,14 @@ using System.Configuration.Provider;
 using System.Web.Configuration;
 using System.Web.Security;
 using Bikee.Security.Domain;
+using MongoDB.Bson.Serialization.Options;
 using MongoDB.Driver;
 
 namespace Bikee.Security.Mongo
 {
 	// How to: Sample Membership Provider Implementation :
 	// http://msdn.microsoft.com/en-us/library/ie/6tc47t75.aspx
-	public class MembershipProvide : MembershipProvider
+	public class MembershipProvider : System.Web.Security.MembershipProvider
 	{
 		private string eventSource = "MongoMembershipProvider";
 		private string eventLog = "Application";
@@ -28,18 +29,19 @@ namespace Bikee.Security.Mongo
 		private bool enablePasswordRetrieval;
 		private bool requiresQuestionAndAnswer;
 		private bool requiresUniqueEmail;
-		private string userCollectionName;
+		private string usersCollectionName;
 		private MembershipPasswordFormat passwordFormat;
 		private MachineKeySection machineKey;
 
-		#region Custom Public Properties
+		#region Custom  Properties
 
 		public bool WriteExceptionsToEventLog { get; set; }
-		public string InvalidUsernameCharacters { get; protected set; }
-		public string InvalidEmailCharacters { get; protected set; }
-		public string CollectionName { get; protected set; }
-		public MongoCollection<User> Collection { get; protected set; }
-		public MongoDatabase Database { get; protected set; }
+		protected string InvalidUsernameCharacters { get; set; }
+		protected string InvalidEmailCharacters { get; set; }
+		public string CollectionName { get; set; }
+		public MongoCollection<User> Collection { get; set; }
+		public MongoDatabase Database { get; set; }
+		public MembershipElements ElementNames { get; set; }
 
 		#endregion
 
@@ -70,7 +72,7 @@ namespace Bikee.Security.Mongo
 			if (string.IsNullOrEmpty(config["description"]))
 			{
 				config.Remove("description");
-				config.Add("description", "Sample ODBC Membership provider");
+				config.Add("description", "MongoDB Membership provider");
 			}
 
 			base.Initialize(name, config);
@@ -86,7 +88,7 @@ namespace Bikee.Security.Mongo
 			this.requiresQuestionAndAnswer = Utils.GetConfigValue(config["requiresQuestionAndAnswer"], false);
 			this.requiresUniqueEmail = Utils.GetConfigValue(config["requiresUniqueEmail"], true);
 
-			this.userCollectionName = Utils.GetConfigValue(config["userCollectionName"], "users");
+			this.usersCollectionName = Utils.GetConfigValue(config["usersCollectionName"], "users");
 
 			this.InvalidUsernameCharacters = Utils.GetConfigValue(config["invalidUsernameCharacters"], ",%");
 			this.InvalidEmailCharacters = Utils.GetConfigValue(config["invalidEmailCharacters"], ",%");
@@ -122,16 +124,23 @@ namespace Bikee.Security.Mongo
 			this.connectionString = connectionStringSettings.ConnectionString;
 
 			// Get encryption and decryption key information from the configuration.
-			var webConfig = WebConfigurationManager.OpenWebConfiguration(System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath);
-			this.machineKey = (MachineKeySection)webConfig.GetSection("system.web/machineKey");
+			this.machineKey = (MachineKeySection)ConfigurationManager.GetSection("system.web/machineKey");
+			//var webConfig = WebConfigurationManager.OpenWebConfiguration(System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath);
+			//this.machineKey = (MachineKeySection)webConfig.GetSection("system.web/machineKey");
 
-			if (machineKey.ValidationKey.Contains("AutoGenerate") || PasswordFormat != MembershipPasswordFormat.Clear)
+			if (this.machineKey == null)
+			{
+				throw new ProviderException("Machine key is not set");
+			}
+
+			if (this.machineKey.ValidationKey.Contains("AutoGenerate") && this.PasswordFormat != MembershipPasswordFormat.Clear)
 			{
 				throw new ProviderException("Hashed or Encrypted passwords are not supported with auto-generated keys.");
 			}
 
-			// TODO: Initialize MongoDB Server
-			// TODO: Register user map
+			this.RegigisterMaps();
+			this.InitMongoDB();
+			this.StoreElementNames();
 		}
 
 		/// <summary>
@@ -330,7 +339,7 @@ namespace Bikee.Security.Mongo
 		/// </returns>
 		public override bool EnablePasswordRetrieval
 		{
-			get { throw new System.NotImplementedException(); }
+			get { return this.enablePasswordRetrieval; }
 		}
 
 		/// <summary>
@@ -341,7 +350,7 @@ namespace Bikee.Security.Mongo
 		/// </returns>
 		public override bool EnablePasswordReset
 		{
-			get { throw new System.NotImplementedException(); }
+			get { return this.enablePasswordReset; }
 		}
 
 		/// <summary>
@@ -352,7 +361,7 @@ namespace Bikee.Security.Mongo
 		/// </returns>
 		public override bool RequiresQuestionAndAnswer
 		{
-			get { throw new System.NotImplementedException(); }
+			get { return this.requiresQuestionAndAnswer; }
 		}
 
 		/// <summary>
@@ -363,8 +372,8 @@ namespace Bikee.Security.Mongo
 		/// </returns>
 		public override string ApplicationName
 		{
-			get { throw new System.NotImplementedException(); }
-			set { throw new System.NotImplementedException(); }
+			get { return this.applicationName; }
+			set { this.applicationName = value; }
 		}
 
 		/// <summary>
@@ -375,7 +384,7 @@ namespace Bikee.Security.Mongo
 		/// </returns>
 		public override int MaxInvalidPasswordAttempts
 		{
-			get { throw new System.NotImplementedException(); }
+			get { return this.maxInvalidPasswordAttempts; }
 		}
 
 		/// <summary>
@@ -386,7 +395,7 @@ namespace Bikee.Security.Mongo
 		/// </returns>
 		public override int PasswordAttemptWindow
 		{
-			get { throw new System.NotImplementedException(); }
+			get { return this.passwordAttemptWindow; }
 		}
 
 		/// <summary>
@@ -397,7 +406,7 @@ namespace Bikee.Security.Mongo
 		/// </returns>
 		public override bool RequiresUniqueEmail
 		{
-			get { throw new System.NotImplementedException(); }
+			get { return this.requiresUniqueEmail; }
 		}
 
 		/// <summary>
@@ -419,7 +428,7 @@ namespace Bikee.Security.Mongo
 		/// </returns>
 		public override int MinRequiredPasswordLength
 		{
-			get { throw new System.NotImplementedException(); }
+			get { return this.minRequiredPasswordLength; }
 		}
 
 		/// <summary>
@@ -430,7 +439,7 @@ namespace Bikee.Security.Mongo
 		/// </returns>
 		public override int MinRequiredNonAlphanumericCharacters
 		{
-			get { throw new System.NotImplementedException(); }
+			get { return this.minRequiredNonAlphanumericCharacters; }
 		}
 
 		/// <summary>
@@ -441,9 +450,38 @@ namespace Bikee.Security.Mongo
 		/// </returns>
 		public override string PasswordStrengthRegularExpression
 		{
-			get { throw new System.NotImplementedException(); }
+			get { return this.passwordStrengthRegularExpression; }
 		}
 
 		#endregion
+
+		protected virtual void RegigisterMaps()
+		{
+			new UserBsonMap();
+		}
+
+		protected virtual void InitMongoDB()
+		{
+			this.Database = MongoDatabase.Create(this.connectionString);
+			this.CollectionName = this.usersCollectionName;
+			this.Collection = Database.GetCollection<User>(CollectionName);
+
+			DateTimeSerializationOptions.Defaults = DateTimeSerializationOptions.LocalInstance;
+		}
+
+		protected virtual void StoreElementNames()
+		{
+			var names = new MembershipElements
+			{
+				LowercaseUsername = Utils.GetElementNameFor<User>(p => p.LowercaseUsername),
+				LastActivityDate = Utils.GetElementNameFor<User, DateTime>(p => p.LastActivityDate),
+				LowercaseEmail = Utils.GetElementNameFor<User>(p => p.LowercaseEmail)
+			};
+			this.ElementNames = names;
+
+			// ensure indexes
+			this.Collection.EnsureIndex(ElementNames.LowercaseUsername);
+			this.Collection.EnsureIndex(ElementNames.LowercaseEmail);
+		}
 	}
 }
