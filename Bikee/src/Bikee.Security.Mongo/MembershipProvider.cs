@@ -2,11 +2,19 @@
 using System.Collections.Specialized;
 using System.Configuration;
 using System.Configuration.Provider;
+using System.Diagnostics;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Web.Configuration;
 using System.Web.Security;
 using Bikee.Security.Domain;
+using FluentMongo.Linq;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Options;
 using MongoDB.Driver;
+using MongoDB.Driver.Builders;
 
 namespace Bikee.Security.Mongo
 {
@@ -14,9 +22,6 @@ namespace Bikee.Security.Mongo
 	// http://msdn.microsoft.com/en-us/library/ie/6tc47t75.aspx
 	public class MembershipProvider : System.Web.Security.MembershipProvider
 	{
-		private string eventSource = "MongoMembershipProvider";
-		private string eventLog = "Application";
-		private string exceptionMessage = "An exception occurred. Please check the Event Log.";
 		private string applicationName;
 		private int newPasswordLength = 8;
 		private string connectionString;
@@ -33,15 +38,23 @@ namespace Bikee.Security.Mongo
 		private MembershipPasswordFormat passwordFormat;
 		private MachineKeySection machineKey;
 
+		private const string EventLog = "Application";
+		private const string EventSource = "MongoMembershipProvider";
+		public const int NewPasswordLength = 8;
+		private const int MaxUsernameLength = 256;
+		private const int MaxPasswordLength = 128;
+		private const int MaxPasswordAnswerLength = 128;
+		private const int MaxEmailLength = 256;
+		private const int MaxPasswordQuestionLength = 256;
+
 		#region Custom  Properties
 
 		public bool WriteExceptionsToEventLog { get; set; }
 		protected string InvalidUsernameCharacters { get; set; }
 		protected string InvalidEmailCharacters { get; set; }
 		public string CollectionName { get; set; }
-		public MongoCollection<User> Collection { get; set; }
+		public MongoCollection<User> UsersCollection { get; set; }
 		public MongoDatabase Database { get; set; }
-		public MembershipElements ElementNames { get; set; }
 
 		#endregion
 
@@ -140,7 +153,6 @@ namespace Bikee.Security.Mongo
 
 			this.RegigisterMaps();
 			this.InitMongoDB();
-			this.StoreElementNames();
 		}
 
 		/// <summary>
@@ -152,7 +164,118 @@ namespace Bikee.Security.Mongo
 		/// <param name="username">The user name for the new user. </param><param name="password">The password for the new user. </param><param name="email">The e-mail address for the new user.</param><param name="passwordQuestion">The password question for the new user.</param><param name="passwordAnswer">The password answer for the new user</param><param name="isApproved">Whether or not the new user is approved to be validated.</param><param name="providerUserKey">The unique identifier from the membership data source for the user.</param><param name="status">A <see cref="T:System.Web.Security.MembershipCreateStatus"/> enumeration value indicating whether the user was created successfully.</param>
 		public override MembershipUser CreateUser(string username, string password, string email, string passwordQuestion, string passwordAnswer, bool isApproved, object providerUserKey, out MembershipCreateStatus status)
 		{
-			throw new System.NotImplementedException();
+			if (string.IsNullOrEmpty(username) || this.InvalidUsernameCharacters.Any(username.Contains) || username.Length > MaxUsernameLength)
+			{
+				status = MembershipCreateStatus.InvalidUserName;
+				return null;
+			}
+			username = username.Trim();
+
+			if (string.IsNullOrEmpty(email) || this.InvalidEmailCharacters.Any(email.Contains) || email.Length > MaxEmailLength)
+			{
+				status = MembershipCreateStatus.InvalidEmail;
+				return null;
+			}
+			email = email.Trim();
+
+			if (string.IsNullOrEmpty(password) || password.Length > MaxPasswordLength || password.Length < this.MinRequiredPasswordLength)
+			{
+				status = MembershipCreateStatus.InvalidPassword;
+				return null;
+			}
+
+			if (!string.IsNullOrEmpty(this.PasswordStrengthRegularExpression) && !Regex.IsMatch(password, this.PasswordStrengthRegularExpression))
+			{
+				status = MembershipCreateStatus.InvalidPassword;
+				return null;
+			}
+
+			if (this.MinRequiredNonAlphanumericCharacters > 0)
+			{
+				int numNonAlphaNumericChars = password.Where((t, i) => !char.IsLetterOrDigit(password, i)).Count();
+
+				if (numNonAlphaNumericChars < this.MinRequiredNonAlphanumericCharacters)
+				{
+					status = MembershipCreateStatus.InvalidPassword;
+					return null;
+				}
+			}
+
+			if ((string.IsNullOrEmpty(passwordQuestion) && this.RequiresQuestionAndAnswer) || ((passwordQuestion != null && passwordQuestion.Length > MaxPasswordQuestionLength)))
+			{
+				status = MembershipCreateStatus.InvalidQuestion;
+				return null;
+			}
+
+			if ((string.IsNullOrEmpty(passwordAnswer) && this.RequiresQuestionAndAnswer) || ((passwordAnswer != null && passwordAnswer.Length > MaxPasswordAnswerLength)))
+			{
+				status = MembershipCreateStatus.InvalidAnswer;
+				return null;
+			}
+
+			var args = new ValidatePasswordEventArgs(username, password, true);
+			this.OnValidatingPassword(args);
+
+			if (args.Cancel)
+			{
+				status = MembershipCreateStatus.InvalidPassword;
+				return null;
+			}
+
+			if (this.RequiresUniqueEmail && !string.IsNullOrEmpty(this.GetUserNameByEmail(email)))
+			{
+				status = MembershipCreateStatus.DuplicateEmail;
+				return null;
+			}
+
+			if (providerUserKey == null)
+			{
+				providerUserKey = ObjectId.GenerateNewId();
+			}
+			else if (!(providerUserKey is BsonValue))
+			{
+				status = MembershipCreateStatus.InvalidProviderUserKey;
+				return null;
+			}
+
+			var membershipUser = this.GetUser(providerUserKey, false);
+			if (membershipUser != null)
+			{
+				status = MembershipCreateStatus.DuplicateUserName;
+				return null;
+			}
+
+			DateTime createDate = DateTime.UtcNow;
+
+			var user = new User
+			{
+				Id = providerUserKey,
+				UserName = username,
+				LowercaseUsername = username.ToLowerInvariant(),
+				DisplayName = username,
+				Email = email,
+				LowercaseEmail = email.ToLowerInvariant(),
+				Password = this.Encode(password),
+				PasswordQuestion = passwordQuestion,
+				PasswordAnswer = this.Encode(passwordAnswer),
+				PasswordFormat = MembershipPasswordFormat.Clear,
+				IsApproved = isApproved,
+				LastPasswordChangedDate = DateTime.MinValue,
+				CreationDate = createDate,
+				IsLockedOut = false,
+				LastLockoutDate = DateTime.MinValue,
+				LastLoginDate = DateTime.MinValue,
+				LastActivityDate = createDate,
+				FailedPasswordAnswerAttemptCount = 0,
+				FailedPasswordAnswerAttemptWindowStart = DateTime.MinValue,
+				FailedPasswordAttemptCount = 0,
+				FailedPasswordAttemptWindowStart = DateTime.MinValue
+			};
+
+			this.Save(user);
+
+			status = MembershipCreateStatus.Success;
+			return this.GetUser(providerUserKey, false);
 		}
 
 		/// <summary>
@@ -245,7 +368,20 @@ namespace Bikee.Security.Mongo
 		/// <param name="providerUserKey">The unique identifier for the membership user to get information for.</param><param name="userIsOnline">true to update the last-activity date/time stamp for the user; false to return user information without updating the last-activity date/time stamp for the user.</param>
 		public override MembershipUser GetUser(object providerUserKey, bool userIsOnline)
 		{
-			throw new System.NotImplementedException();
+			if (providerUserKey == null)
+			{
+				throw new ArgumentNullException("providerUserKey");
+			}
+
+			var id = providerUserKey is BsonValue ? providerUserKey as BsonValue : BsonValue.Create(providerUserKey);
+
+			if (id == null)
+			{
+				throw new ArgumentException("providerUserKey type should be compatible with BsonValue type");
+			}
+
+			var user = this.UsersCollection.FindOneById(id);
+			return this.ToMembershipUser(user);
 		}
 
 		/// <summary>
@@ -257,7 +393,13 @@ namespace Bikee.Security.Mongo
 		/// <param name="username">The name of the user to get information for. </param><param name="userIsOnline">true to update the last-activity date/time stamp for the user; false to return user information without updating the last-activity date/time stamp for the user. </param>
 		public override MembershipUser GetUser(string username, bool userIsOnline)
 		{
-			throw new System.NotImplementedException();
+			if (string.IsNullOrEmpty(username))
+			{
+				throw new ArgumentException("username");
+			}
+
+				var user = this.UsersCollection.AsQueryable().FirstOrDefault(u => u.LowercaseUsername == username.ToLowerInvariant());
+				return this.ToMembershipUser(user);
 		}
 
 		/// <summary>
@@ -269,7 +411,7 @@ namespace Bikee.Security.Mongo
 		/// <param name="email">The e-mail address to search for. </param>
 		public override string GetUserNameByEmail(string email)
 		{
-			throw new System.NotImplementedException();
+			return string.Empty;
 		}
 
 		/// <summary>
@@ -464,24 +606,131 @@ namespace Bikee.Security.Mongo
 		{
 			this.Database = MongoDatabase.Create(this.connectionString);
 			this.CollectionName = this.usersCollectionName;
-			this.Collection = Database.GetCollection<User>(CollectionName);
+			this.UsersCollection = Database.GetCollection<User>(CollectionName);
 
 			DateTimeSerializationOptions.Defaults = DateTimeSerializationOptions.LocalInstance;
 		}
 
-		protected virtual void StoreElementNames()
+		/// <summary>
+		/// Encodes the password. Encrypts, Hashes, or leaves the password clear based on the PasswordFormat.
+		/// </summary>
+		/// <param name="stringToBeEncoded">The string to be encoded.</param>
+		/// <returns>
+		/// The encoded password.
+		/// </returns>
+		protected string Encode(string stringToBeEncoded)
 		{
-			var names = new MembershipElements
+			if (string.IsNullOrEmpty(stringToBeEncoded))
 			{
-				LowercaseUsername = Utils.GetElementNameFor<User>(p => p.LowercaseUsername),
-				LastActivityDate = Utils.GetElementNameFor<User, DateTime>(p => p.LastActivityDate),
-				LowercaseEmail = Utils.GetElementNameFor<User>(p => p.LowercaseEmail)
-			};
-			this.ElementNames = names;
+				return null;
+			}
 
-			// ensure indexes
-			this.Collection.EnsureIndex(ElementNames.LowercaseUsername);
-			this.Collection.EnsureIndex(ElementNames.LowercaseEmail);
+			byte[] passwordData;
+			string encodedString = stringToBeEncoded;
+			switch (this.PasswordFormat)
+			{
+				case MembershipPasswordFormat.Clear:
+					break;
+				case MembershipPasswordFormat.Encrypted:
+					passwordData = Encoding.Unicode.GetBytes(encodedString);
+					encodedString = MachineKey.Encode(passwordData, MachineKeyProtection.All);
+					break;
+				case MembershipPasswordFormat.Hashed:
+					passwordData = Encoding.Unicode.GetBytes(encodedString);
+					encodedString = MachineKey.Encode(passwordData, MachineKeyProtection.Validation);
+					break;
+				default:
+					throw new ProviderException("Unsupported password format.");
+			}
+
+			return encodedString;
+		}
+
+		/// <summary>
+		/// Decodes the password. Decrypts or leaves the password clear based on the PasswordFormat.
+		/// </summary>
+		/// <param name="stringToBeDecoded">The string to be decoded.</param>
+		/// <returns></returns>
+		protected string Decode(string stringToBeDecoded)
+		{
+			string dencodedString = stringToBeDecoded;
+			switch (this.PasswordFormat)
+			{
+				case MembershipPasswordFormat.Clear:
+					break;
+				case MembershipPasswordFormat.Encrypted:
+					dencodedString = Encoding.Unicode.GetString(MachineKey.Decode(dencodedString, MachineKeyProtection.All));
+					break;
+				case MembershipPasswordFormat.Hashed:
+					dencodedString = Encoding.Unicode.GetString(MachineKey.Decode(dencodedString, MachineKeyProtection.Validation));
+					break;
+				default:
+					throw new ProviderException("Unsupported password format.");
+			}
+
+			return dencodedString;
+		}
+
+		protected void Save<T>(T user) where T : User
+		{
+			SafeModeResult result = null;
+			try
+			{
+				var users = this.UsersCollection;
+				result = users.Save(user, SafeMode.True);
+			}
+			catch (Exception exception)
+			{
+				this.HandleDataExceptionAndThrow(exception);
+			}
+
+			if (result == null)
+			{
+				this.HandleDataExceptionAndThrow(new ProviderException("Save to database did not return a status result"));
+			}
+			else if (!result.Ok)
+			{
+				this.HandleDataExceptionAndThrow(new ProviderException(result.LastErrorMessage));
+			}
+		}
+
+		protected void HandleDataExceptionAndThrow(Exception exception)
+		{
+			if (this.WriteExceptionsToEventLog)
+			{
+				this.WriteToEventLog(exception);
+				throw new ProviderException(exception.Message, exception);
+			}
+
+			throw exception;
+		}
+
+		/// <summary>
+		/// WriteToEventLog
+		/// A helper function that writes exception detail to the event log. Exceptions
+		/// are written to the event log as a security measure to avoid private database
+		/// details from being returned to the browser. If a method does not return a status
+		/// or boolean indicating the action succeeded or failed, a generic exception is also
+		/// thrown by the caller.
+		/// </summary>
+		/// <param name="exception">The exception.</param>
+		protected void WriteToEventLog(Exception exception)
+		{
+			var log = new EventLog { Source = EventSource, Log = EventLog };
+
+			var message = string.Format("An exception occurred communicating with the data source.\r\n Exception: {0}", exception);
+			log.WriteEntry(message);
+		}
+
+		protected virtual MembershipUser ToMembershipUser<T>(T user) where T: User
+		{
+			if (user == null)
+			{
+				return null;
+			}
+
+			return new MembershipUser(this.Name, user.UserName, user.Id, user.Email, user.PasswordQuestion, user.Comment, user.IsApproved, 
+				user.IsLockedOut, user.CreationDate, user.LastLoginDate, user.LastActivityDate, user.LastPasswordChangedDate,user.LastLockoutDate);
 		}
 	}
 }

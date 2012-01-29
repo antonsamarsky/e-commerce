@@ -19,7 +19,7 @@ namespace Bikee.Security.Mongo.Tests
 			this.user = new User
 			{
 				Id = ObjectId.GenerateNewId(),
-				Username = "Username value",
+				UserName = "UserName value",
 				LowercaseUsername = "LowercaseUsername value",
 				DisplayName = "DisplayName value",
 				Email = "Email value",
@@ -29,12 +29,11 @@ namespace Bikee.Security.Mongo.Tests
 				PasswordQuestion = "PasswordQuestion question",
 				PasswordAnswer = "PasswordAnswer question",
 				PasswordFormat = MembershipPasswordFormat.Clear,
-				PasswordSalt = "PasswordSalt value",
 				IsApproved = true,
 				LastPasswordChangedDate = DateTime.MinValue,
-				CreateDate = DateTime.MaxValue,
+				CreationDate = DateTime.MaxValue,
 				IsLockedOut = false,
-				LastLockedOutDate = DateTime.MinValue,
+				LastLockoutDate = DateTime.MinValue,
 				LastLoginDate = DateTime.MaxValue,
 				LastActivityDate = DateTime.MaxValue,
 				FailedPasswordAnswerAttemptCount = 0,

@@ -20,8 +20,26 @@ namespace Bikee.Security.Mongo.Tests
 		{
 			this.provider.Should().NotBeNull();
 			this.provider.Database.Should().NotBeNull();
-			this.provider.ElementNames.Should().NotBeNull();
+			this.provider.UsersCollection.Should().NotBeNull();
 			this.provider.CollectionName.Should().NotBeNull();
+		}
+
+		[Test]
+		public void CreateUserTest()
+		{
+			var userName = "user";
+			var email = "user@em.ail";
+			var isApproved = true;
+
+			MembershipCreateStatus status;
+			var user = this.provider.CreateUser(userName, "password_", email, string.Empty, string.Empty, isApproved, null, out status);
+
+			Assert.That(status == MembershipCreateStatus.Success);
+			user.Should().NotBeNull();
+
+			Assert.That(user.UserName == userName);
+			Assert.That(user.Email == email);
+			Assert.That(user.IsApproved == isApproved);
 		}
 	}
 }
