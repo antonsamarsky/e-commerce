@@ -11,7 +11,6 @@ using System.Web.Security;
 using Bikee.Security.Domain;
 using FluentMongo.Linq;
 using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Options;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
@@ -23,7 +22,6 @@ namespace Bikee.Security.Mongo
 	public class MembershipProvider : System.Web.Security.MembershipProvider
 	{
 		private string applicationName;
-		private int newPasswordLength = 8;
 		private string connectionString;
 		private int maxInvalidPasswordAttempts;
 		private int passwordAttemptWindow;
@@ -40,7 +38,7 @@ namespace Bikee.Security.Mongo
 
 		private const string EventLog = "Application";
 		private const string EventSource = "MongoMembershipProvider";
-		public const int NewPasswordLength = 8;
+		private const int NewPasswordLength = 8;
 		private const int MaxUsernameLength = 256;
 		private const int MaxPasswordLength = 128;
 		private const int MaxPasswordAnswerLength = 128;
@@ -58,7 +56,7 @@ namespace Bikee.Security.Mongo
 
 		#endregion
 
-		#region Overrides of MembershipProvider
+		#region Overrides of MembershipProvider Methods
 
 		/// <summary>
 		/// Initializes the provider.
@@ -72,11 +70,6 @@ namespace Bikee.Security.Mongo
 		/// <exception cref="T:System.InvalidOperationException">An attempt is made to call <see cref="M:System.Configuration.Provider.ProviderBase.Initialize(System.String,System.Collections.Specialized.NameValueCollection)"/> on a provider after the provider has already been initialized.</exception>
 		public override void Initialize(string name, NameValueCollection config)
 		{
-			if (config == null)
-			{
-				throw new ArgumentNullException("config");
-			}
-
 			if (string.IsNullOrEmpty(name))
 			{
 				name = "MongoMembershipProvider";
@@ -120,18 +113,19 @@ namespace Bikee.Security.Mongo
 					this.passwordFormat = MembershipPasswordFormat.Clear;
 					break;
 				default:
-					throw new ProviderException("Password format not supported.");
+					this.HandleExceptionAndThrow(new MongoProviderException("Password format not supported."));
+					break;
 			}
 
 			if ((this.passwordFormat == MembershipPasswordFormat.Hashed) && EnablePasswordRetrieval)
 			{
-				throw new ProviderException("Configured settings are invalid: Hashed passwords cannot be retrieved. Either set the password format to different type, or set supportsPasswordRetrieval to false.");
+				this.HandleExceptionAndThrow(new MongoProviderException("Configured settings are invalid: Hashed passwords cannot be retrieved. Either set the password format to different type, or set supportsPasswordRetrieval to false."));
 			}
 
 			var connectionStringSettings = ConfigurationManager.ConnectionStrings[config["connectionStringName"]];
 			if (connectionStringSettings == null || string.IsNullOrEmpty(connectionStringSettings.ConnectionString.Trim()))
 			{
-				throw new ProviderException("Connection string cannot be blank.");
+				this.HandleExceptionAndThrow(new MongoProviderException("Connection string cannot be blank."));
 			}
 
 			this.connectionString = connectionStringSettings.ConnectionString;
@@ -143,12 +137,12 @@ namespace Bikee.Security.Mongo
 
 			if (this.machineKey == null)
 			{
-				throw new ProviderException("Machine key is not set");
+				this.HandleExceptionAndThrow(new MongoProviderException("Machine key is not set"));
 			}
 
 			if (this.machineKey.ValidationKey.Contains("AutoGenerate") && this.PasswordFormat != MembershipPasswordFormat.Clear)
 			{
-				throw new ProviderException("Hashed or Encrypted passwords are not supported with auto-generated keys.");
+				this.HandleExceptionAndThrow(new MongoProviderException("Hashed or Encrypted passwords are not supported with auto-generated keys."));
 			}
 
 			this.RegigisterMaps();
@@ -161,7 +155,7 @@ namespace Bikee.Security.Mongo
 		/// <returns>
 		/// A <see cref="T:System.Web.Security.MembershipUser"/> object populated with the information for the newly created user.
 		/// </returns>
-		/// <param name="username">The user name for the new user. </param><param name="password">The password for the new user. </param><param name="email">The e-mail address for the new user.</param><param name="passwordQuestion">The password question for the new user.</param><param name="passwordAnswer">The password answer for the new user</param><param name="isApproved">Whether or not the new user is approved to be validated.</param><param name="providerUserKey">The unique identifier from the membership data source for the user.</param><param name="status">A <see cref="T:System.Web.Security.MembershipCreateStatus"/> enumeration value indicating whether the user was created successfully.</param>
+		/// <param name="username">The user name for the new user. </param><param name="password">The password for the new user. </param><param name="email">The e-email address for the new user.</param><param name="passwordQuestion">The password question for the new user.</param><param name="passwordAnswer">The password answer for the new user</param><param name="isApproved">Whether or not the new user is approved to be validated.</param><param name="providerUserKey">The unique identifier from the membership data source for the user.</param><param name="status">A <see cref="T:System.Web.Security.MembershipCreateStatus"/> enumeration value indicating whether the user was created successfully.</param>
 		public override MembershipUser CreateUser(string username, string password, string email, string passwordQuestion, string passwordAnswer, bool isApproved, object providerUserKey, out MembershipCreateStatus status)
 		{
 			if (string.IsNullOrEmpty(username) || this.InvalidUsernameCharacters.Any(username.Contains) || username.Length > MaxUsernameLength)
@@ -255,9 +249,9 @@ namespace Bikee.Security.Mongo
 				DisplayName = username,
 				Email = email,
 				LowercaseEmail = email.ToLowerInvariant(),
-				Password = this.Encode(password),
+				Password = this.Encode(password, this.PasswordFormat),
 				PasswordQuestion = passwordQuestion,
-				PasswordAnswer = this.Encode(passwordAnswer),
+				PasswordAnswer = this.Encode(passwordAnswer, this.PasswordFormat),
 				PasswordFormat = MembershipPasswordFormat.Clear,
 				IsApproved = isApproved,
 				LastPasswordChangedDate = DateTime.MinValue,
@@ -272,7 +266,7 @@ namespace Bikee.Security.Mongo
 				FailedPasswordAttemptWindowStart = DateTime.MinValue
 			};
 
-			this.Save(user);
+			this.SaveUser(user);
 
 			status = MembershipCreateStatus.Success;
 			return this.GetUser(providerUserKey, false);
@@ -287,7 +281,36 @@ namespace Bikee.Security.Mongo
 		/// <param name="username">The user to change the password question and answer for. </param><param name="password">The password for the specified user. </param><param name="newPasswordQuestion">The new password question for the specified user. </param><param name="newPasswordAnswer">The new password answer for the specified user. </param>
 		public override bool ChangePasswordQuestionAndAnswer(string username, string password, string newPasswordQuestion, string newPasswordAnswer)
 		{
-			throw new System.NotImplementedException();
+			if (string.IsNullOrEmpty(username) || this.InvalidUsernameCharacters.Any(username.Contains) || username.Length > MaxUsernameLength)
+			{
+				return false;
+			}
+
+			if (string.IsNullOrEmpty(password) || password.Length > MaxPasswordLength || password.Length < this.MinRequiredPasswordLength)
+			{
+				return false;
+			}
+
+			var user = this.GetUserByName(username);
+			if (!this.ValidateUserPassword(user, password))
+			{
+				return false;
+			}
+
+			if ((string.IsNullOrEmpty(newPasswordQuestion) && this.RequiresQuestionAndAnswer) || ((newPasswordQuestion != null && newPasswordQuestion.Length > MaxPasswordQuestionLength)))
+			{
+				return false;
+			}
+
+			if ((string.IsNullOrEmpty(newPasswordAnswer) && this.RequiresQuestionAndAnswer) || ((newPasswordAnswer != null && newPasswordAnswer.Length > MaxPasswordAnswerLength)))
+			{
+				return false;
+			}
+
+			user.PasswordQuestion = newPasswordQuestion;
+			user.PasswordAnswer = string.IsNullOrEmpty(newPasswordAnswer) ? null : this.Encode(newPasswordAnswer, user.PasswordFormat);
+
+			return false;
 		}
 
 		/// <summary>
@@ -299,7 +322,32 @@ namespace Bikee.Security.Mongo
 		/// <param name="username">The user to retrieve the password for. </param><param name="answer">The password answer for the user. </param>
 		public override string GetPassword(string username, string answer)
 		{
-			throw new System.NotImplementedException();
+			if (!this.EnablePasswordRetrieval)
+			{
+				this.HandleExceptionAndThrow(new MongoProviderException("Password Retrieval is not enabled."));
+			}
+
+			User user = this.GetUserByName(username);
+			if (user == null)
+			{
+				this.HandleExceptionAndThrow(new MongoProviderException("User was not found."));
+			}
+
+			if (user.IsLockedOut)
+			{
+				this.HandleExceptionAndThrow(new MongoProviderException(string.Format("User is locked out. user id: {0}", user.Id)));
+			}
+
+			var decodedCorrectAnswer = this.Decode(user.PasswordAnswer, user.PasswordFormat);
+			var decodedAnswer = this.Decode(answer, user.PasswordFormat);
+
+			if (this.RequiresQuestionAndAnswer && decodedCorrectAnswer == decodedAnswer)
+			{
+				this.UpdateFailurePasswordAnswerCount(user, false);
+				this.HandleExceptionAndThrow(new MongoProviderException(string.Format("Wrong answer, user id: {0}.", user.Id)));
+			}
+
+			return this.Decode(user.Password, user.PasswordFormat);
 		}
 
 		/// <summary>
@@ -311,7 +359,69 @@ namespace Bikee.Security.Mongo
 		/// <param name="username">The user to update the password for. </param><param name="oldPassword">The current password for the specified user. </param><param name="newPassword">The new password for the specified user. </param>
 		public override bool ChangePassword(string username, string oldPassword, string newPassword)
 		{
-			throw new System.NotImplementedException();
+			if (string.IsNullOrEmpty(username) || this.InvalidUsernameCharacters.Any(username.Contains) || username.Length > MaxUsernameLength)
+			{
+				return false;
+			}
+
+			if (string.IsNullOrEmpty(oldPassword) || oldPassword.Length > MaxPasswordLength || oldPassword.Length < this.MinRequiredPasswordLength)
+			{
+				return false;
+			}
+
+			User user = this.GetUserByName(username);
+			if (user == null)
+			{
+				this.HandleExceptionAndThrow(new MongoProviderException("User was not found."));
+			}
+			if (user.IsLockedOut)
+			{
+				this.HandleExceptionAndThrow(new MongoProviderException(string.Format("User is locked out. user id: {0}", user.Id)));
+			}
+
+			if (!this.ValidateUserPassword(user, oldPassword))
+			{
+				return false;
+			}
+
+			if (string.IsNullOrEmpty(newPassword) || newPassword.Length > MaxPasswordLength || newPassword.Length < this.MinRequiredPasswordLength)
+			{
+				return false;
+			}
+			if (!string.IsNullOrEmpty(this.PasswordStrengthRegularExpression) && !Regex.IsMatch(newPassword, this.PasswordStrengthRegularExpression))
+			{
+				return false;
+			}
+
+			if (this.MinRequiredNonAlphanumericCharacters > 0)
+			{
+				int numNonAlphaNumericChars = newPassword.Where((t, i) => !char.IsLetterOrDigit(newPassword, i)).Count();
+
+				if (numNonAlphaNumericChars < this.MinRequiredNonAlphanumericCharacters)
+				{
+					return false;
+				}
+			}
+
+			// Raise event to let others check new username/password
+			ValidatePasswordEventArgs args = new ValidatePasswordEventArgs(username, newPassword, false);
+			this.OnValidatingPassword(args);
+			if (args.Cancel)
+			{
+				if (args.FailureInformation != null)
+				{
+					throw args.FailureInformation;
+				}
+				throw new MembershipPasswordException("Change password canceled due to new password validation failure.");
+			}
+
+			// Save new password
+			user.Password = this.Encode(newPassword, this.PasswordFormat);
+			user.PasswordFormat = this.PasswordFormat;
+			user.LastPasswordChangedDate = DateTime.UtcNow;
+			this.SaveUser(user);
+
+			return true;
 		}
 
 		/// <summary>
@@ -323,7 +433,51 @@ namespace Bikee.Security.Mongo
 		/// <param name="username">The user to reset the password for. </param><param name="answer">The password answer for the specified user. </param>
 		public override string ResetPassword(string username, string answer)
 		{
-			throw new System.NotImplementedException();
+			if (!this.EnablePasswordReset)
+			{
+				throw new NotSupportedException("Password reset is not enabled.");
+			}
+
+			User user = this.GetUserByName(username);
+			if (user == null)
+			{
+				this.HandleExceptionAndThrow(new MongoProviderException("User was not found."));
+			}
+			if (user.IsLockedOut)
+			{
+				this.HandleExceptionAndThrow(new MongoProviderException(string.Format("User is locked out. user id: {0}", user.Id)));
+			}
+
+			var decodedCorrectAnswer = this.Decode(user.PasswordAnswer, user.PasswordFormat);
+			var decodedAnswer = this.Decode(answer, user.PasswordFormat);
+
+			if (this.RequiresQuestionAndAnswer && decodedCorrectAnswer == decodedAnswer)
+			{
+				this.UpdateFailurePasswordAnswerCount(user, false);
+				this.HandleExceptionAndThrow(new MongoProviderException(string.Format("Wrong answer, user id: {0}.", user.Id)));
+			}
+
+			string newGeneratedPassword = Membership.GeneratePassword(NewPasswordLength, this.MinRequiredNonAlphanumericCharacters);
+
+			// Raise event to let others check new username/password
+			ValidatePasswordEventArgs args = new ValidatePasswordEventArgs(username, newGeneratedPassword, false);
+			this.OnValidatingPassword(args);
+			if (args.Cancel)
+			{
+				if (args.FailureInformation != null)
+				{
+					throw args.FailureInformation;
+				}
+				throw new MembershipPasswordException("Change password canceled due to new password validation failure.");
+			}
+
+			// Save new password
+			user.Password = this.Encode(newGeneratedPassword, this.PasswordFormat);
+			user.PasswordFormat = this.PasswordFormat;
+			user.LastPasswordChangedDate = DateTime.UtcNow;
+			this.SaveUser(user);
+
+			return newGeneratedPassword;
 		}
 
 		/// <summary>
@@ -332,7 +486,22 @@ namespace Bikee.Security.Mongo
 		/// <param name="user">A <see cref="T:System.Web.Security.MembershipUser"/> object that represents the user to update and the updated information for the user. </param>
 		public override void UpdateUser(MembershipUser user)
 		{
-			throw new System.NotImplementedException();
+			User userFromDB = this.GetUserById(BsonValue.Create(user.ProviderUserKey));
+			if (userFromDB == null)
+			{
+				this.HandleExceptionAndThrow(new MongoProviderException("User was not found."));
+			}
+			if (userFromDB.IsLockedOut)
+			{
+				this.HandleExceptionAndThrow(new MongoProviderException(string.Format("User is locked out. user id: {0}", userFromDB.Id)));
+			}
+
+			userFromDB.Email = user.Email;
+			userFromDB.Comment = user.Comment;
+			userFromDB.IsApproved = user.IsApproved;
+			userFromDB.LastLoginDate = user.LastLoginDate;
+			userFromDB.LastActivityDate = user.LastActivityDate;
+			this.SaveUser(userFromDB);
 		}
 
 		/// <summary>
@@ -344,19 +513,64 @@ namespace Bikee.Security.Mongo
 		/// <param name="username">The name of the user to validate. </param><param name="password">The password for the specified user. </param>
 		public override bool ValidateUser(string username, string password)
 		{
-			throw new System.NotImplementedException();
+			if (string.IsNullOrEmpty(username) || this.InvalidUsernameCharacters.Any(username.Contains) || username.Length > MaxUsernameLength)
+			{
+				return false;
+			}
+
+			if (string.IsNullOrEmpty(password) || password.Length > MaxPasswordLength || password.Length < this.MinRequiredPasswordLength)
+			{
+				return false;
+			}
+
+			User user = this.GetUserByName(username);
+			if (user == null || user.IsLockedOut || !user.IsApproved)
+			{
+				return false;
+			}
+
+			if (!this.ValidateUserPassword(user, password))
+			{
+				return false;
+			}
+
+			// User is authenticated. Update last activity and last login dates and failure counts.
+			user.LastActivityDate = DateTime.UtcNow;
+			user.LastLoginDate = DateTime.UtcNow;
+			user.FailedPasswordAnswerAttemptCount = 0;
+			user.FailedPasswordAttemptCount = 0;
+			user.FailedPasswordAnswerAttemptWindowStart = DateTime.MinValue;
+			user.FailedPasswordAttemptWindowStart = DateTime.MinValue;
+			this.SaveUser(user);
+
+			return true;
 		}
 
 		/// <summary>
 		/// Clears a lock so that the membership user can be validated.
 		/// </summary>
+		/// <param name="username">The username.</param>
 		/// <returns>
 		/// true if the membership user was successfully unlocked; otherwise, false.
 		/// </returns>
-		/// <param name="userName">The membership user whose lock status you want to clear.</param>
-		public override bool UnlockUser(string userName)
+		public override bool UnlockUser(string username)
 		{
-			throw new System.NotImplementedException();
+			User user = this.GetUserByName(username);
+			if (user == null || !user.IsApproved)
+			{
+				return false;
+			}
+
+			user.IsLockedOut = false;
+			user.LastActivityDate = DateTime.UtcNow;
+			user.LastLoginDate = DateTime.UtcNow;
+			user.FailedPasswordAnswerAttemptCount = 0;
+			user.FailedPasswordAttemptCount = 0;
+			user.FailedPasswordAnswerAttemptWindowStart = DateTime.MinValue;
+			user.FailedPasswordAttemptWindowStart = DateTime.MinValue;
+			this.SaveUser(user);
+
+			return true;
 		}
 
 		/// <summary>
@@ -368,19 +582,8 @@ namespace Bikee.Security.Mongo
 		/// <param name="providerUserKey">The unique identifier for the membership user to get information for.</param><param name="userIsOnline">true to update the last-activity date/time stamp for the user; false to return user information without updating the last-activity date/time stamp for the user.</param>
 		public override MembershipUser GetUser(object providerUserKey, bool userIsOnline)
 		{
-			if (providerUserKey == null)
-			{
-				throw new ArgumentNullException("providerUserKey");
-			}
-
 			var id = providerUserKey is BsonValue ? providerUserKey as BsonValue : BsonValue.Create(providerUserKey);
-
-			if (id == null)
-			{
-				throw new ArgumentException("providerUserKey type should be compatible with BsonValue type");
-			}
-
-			var user = this.UsersCollection.FindOneById(id);
+			var user = this.GetUserById(id);
 			return this.ToMembershipUser(user);
 		}
 
@@ -393,25 +596,21 @@ namespace Bikee.Security.Mongo
 		/// <param name="username">The name of the user to get information for. </param><param name="userIsOnline">true to update the last-activity date/time stamp for the user; false to return user information without updating the last-activity date/time stamp for the user. </param>
 		public override MembershipUser GetUser(string username, bool userIsOnline)
 		{
-			if (string.IsNullOrEmpty(username))
-			{
-				throw new ArgumentException("username");
-			}
-
-				var user = this.UsersCollection.AsQueryable().FirstOrDefault(u => u.LowercaseUsername == username.ToLowerInvariant());
-				return this.ToMembershipUser(user);
+			var user = this.GetUserByName(username);
+			return this.ToMembershipUser(user);
 		}
 
 		/// <summary>
-		/// Gets the user name associated with the specified e-mail address.
+		/// Gets the user name associated with the specified e-email address.
 		/// </summary>
 		/// <returns>
-		/// The user name associated with the specified e-mail address. If no match is found, return null.
+		/// The user name associated with the specified e-email address. If no match is found, return null.
 		/// </returns>
-		/// <param name="email">The e-mail address to search for. </param>
+		/// <param name="email">The e-email address to search for. </param>
 		public override string GetUserNameByEmail(string email)
 		{
-			return string.Empty;
+			var user = this.GetUserByMail(email);
+			return user.UserName;
 		}
 
 		/// <summary>
@@ -423,7 +622,14 @@ namespace Bikee.Security.Mongo
 		/// <param name="username">The name of the user to delete.</param><param name="deleteAllRelatedData">true to delete data related to the user from the database; false to leave data related to the user in the database.</param>
 		public override bool DeleteUser(string username, bool deleteAllRelatedData)
 		{
-			throw new System.NotImplementedException();
+			if (string.IsNullOrEmpty(username))
+			{
+				return false;
+			}
+
+			var query = Query.EQ(Utils.GetElementNameFor<User>(u => u.LowercaseUsername), username.ToLowerInvariant());
+			var result = this.UsersCollection.Remove(query, SafeMode.True);
+			return result.Ok;
 		}
 
 		/// <summary>
@@ -435,18 +641,38 @@ namespace Bikee.Security.Mongo
 		/// <param name="pageIndex">The index of the page of results to return. <paramref name="pageIndex"/> is zero-based.</param><param name="pageSize">The size of the page of results to return.</param><param name="totalRecords">The total number of matched users.</param>
 		public override MembershipUserCollection GetAllUsers(int pageIndex, int pageSize, out int totalRecords)
 		{
-			throw new System.NotImplementedException();
+			var users = new MembershipUserCollection();
+
+			// execute second query to get total count
+			totalRecords = (int)this.UsersCollection.Count();
+			if (totalRecords == 0 || pageIndex <= 0 || pageSize <= 0)
+			{
+				return users;
+			}
+
+			this.UsersCollection.AsQueryable()
+				.Skip(pageIndex * pageSize)
+				.Take(pageSize)
+				.Select(u => this.ToMembershipUser(u))
+				.ToList()
+				.ForEach(users.Add);
+
+			return users;
 		}
 
 		/// <summary>
 		/// Gets the number of users currently accessing the application.
+		/// http://msdn.microsoft.com/en-us/library/system.web.security.membership.userisonlinetimewindow.aspx
 		/// </summary>
 		/// <returns>
 		/// The number of users currently accessing the application.
 		/// </returns>
 		public override int GetNumberOfUsersOnline()
 		{
-			throw new System.NotImplementedException();
+			TimeSpan onlineSpan = new TimeSpan(0, Membership.UserIsOnlineTimeWindow, 0);
+			DateTime compareTime = DateTime.UtcNow.Subtract(onlineSpan);
+
+			return this.UsersCollection.AsQueryable().Count(u => u.LastActivityDate > compareTime);
 		}
 
 		/// <summary>
@@ -458,20 +684,63 @@ namespace Bikee.Security.Mongo
 		/// <param name="usernameToMatch">The user name to search for.</param><param name="pageIndex">The index of the page of results to return. <paramref name="pageIndex"/> is zero-based.</param><param name="pageSize">The size of the page of results to return.</param><param name="totalRecords">The total number of matched users.</param>
 		public override MembershipUserCollection FindUsersByName(string usernameToMatch, int pageIndex, int pageSize, out int totalRecords)
 		{
-			throw new System.NotImplementedException();
+			var users = new MembershipUserCollection();
+
+			if (pageIndex <= 0 || pageSize <= 0)
+			{
+				totalRecords = 0;
+				return users;
+			}
+
+			var usersToMatchQuery = this.UsersCollection.AsQueryable()
+															.Where(u => u.LowercaseUsername == usernameToMatch.ToLowerInvariant());
+
+			totalRecords = usersToMatchQuery.Count();
+
+			usersToMatchQuery
+				.Skip(pageIndex * pageSize)
+				.Take(pageSize)
+				.Select(u => this.ToMembershipUser(u))
+				.ToList()
+				.ForEach(users.Add);
+
+			return users;
 		}
 
 		/// <summary>
-		/// Gets a collection of membership users where the e-mail address contains the specified e-mail address to match.
+		/// Gets a collection of membership users where the e-email address contains the specified e-email address to match.
 		/// </summary>
 		/// <returns>
 		/// A <see cref="T:System.Web.Security.MembershipUserCollection"/> collection that contains a page of <paramref name="pageSize"/><see cref="T:System.Web.Security.MembershipUser"/> objects beginning at the page specified by <paramref name="pageIndex"/>.
 		/// </returns>
-		/// <param name="emailToMatch">The e-mail address to search for.</param><param name="pageIndex">The index of the page of results to return. <paramref name="pageIndex"/> is zero-based.</param><param name="pageSize">The size of the page of results to return.</param><param name="totalRecords">The total number of matched users.</param>
+		/// <param name="emailToMatch">The e-email address to search for.</param><param name="pageIndex">The index of the page of results to return. <paramref name="pageIndex"/> is zero-based.</param><param name="pageSize">The size of the page of results to return.</param><param name="totalRecords">The total number of matched users.</param>
 		public override MembershipUserCollection FindUsersByEmail(string emailToMatch, int pageIndex, int pageSize, out int totalRecords)
 		{
-			throw new System.NotImplementedException();
+			var users = new MembershipUserCollection();
+
+			if (pageIndex <= 0 || pageSize <= 0)
+			{
+				totalRecords = 0;
+				return users;
+			}
+
+			var usersToMatchQuery = this.UsersCollection.AsQueryable()
+															.Where(u => u.LowercaseEmail == emailToMatch.ToLowerInvariant());
+
+			totalRecords = usersToMatchQuery.Count();
+
+			usersToMatchQuery
+				.Skip(pageIndex * pageSize)
+				.Take(pageSize)
+				.Select(u => this.ToMembershipUser(u))
+				.ToList()
+				.ForEach(users.Add);
+
+			return users;
 		}
+
+		#endregion
+		#region Overrides of MembershipProvider Properties
 
 		/// <summary>
 		/// Indicates whether the membership provider is configured to allow users to retrieve their passwords.
@@ -541,10 +810,10 @@ namespace Bikee.Security.Mongo
 		}
 
 		/// <summary>
-		/// Gets a value indicating whether the membership provider is configured to require a unique e-mail address for each user name.
+		/// Gets a value indicating whether the membership provider is configured to require a unique e-email address for each user name.
 		/// </summary>
 		/// <returns>
-		/// true if the membership provider requires a unique e-mail address; otherwise, false. The default is true.
+		/// true if the membership provider requires a unique e-email address; otherwise, false. The default is true.
 		/// </returns>
 		public override bool RequiresUniqueEmail
 		{
@@ -615,10 +884,11 @@ namespace Bikee.Security.Mongo
 		/// Encodes the password. Encrypts, Hashes, or leaves the password clear based on the PasswordFormat.
 		/// </summary>
 		/// <param name="stringToBeEncoded">The string to be encoded.</param>
+		/// <param name="passwordFormatToUse">The password format to use.</param>
 		/// <returns>
 		/// The encoded password.
 		/// </returns>
-		protected string Encode(string stringToBeEncoded)
+		protected virtual string Encode(string stringToBeEncoded, MembershipPasswordFormat passwordFormatToUse)
 		{
 			if (string.IsNullOrEmpty(stringToBeEncoded))
 			{
@@ -627,7 +897,7 @@ namespace Bikee.Security.Mongo
 
 			byte[] passwordData;
 			string encodedString = stringToBeEncoded;
-			switch (this.PasswordFormat)
+			switch (passwordFormatToUse)
 			{
 				case MembershipPasswordFormat.Clear:
 					break;
@@ -650,11 +920,12 @@ namespace Bikee.Security.Mongo
 		/// Decodes the password. Decrypts or leaves the password clear based on the PasswordFormat.
 		/// </summary>
 		/// <param name="stringToBeDecoded">The string to be decoded.</param>
-		/// <returns></returns>
-		protected string Decode(string stringToBeDecoded)
+		/// <param name="passwordFormatToUse">The password format to use.</param>
+		/// <returns>The decoded data.</returns>
+		protected virtual string Decode(string stringToBeDecoded, MembershipPasswordFormat passwordFormatToUse)
 		{
 			string dencodedString = stringToBeDecoded;
-			switch (this.PasswordFormat)
+			switch (passwordFormatToUse)
 			{
 				case MembershipPasswordFormat.Clear:
 					break;
@@ -671,7 +942,37 @@ namespace Bikee.Security.Mongo
 			return dencodedString;
 		}
 
-		protected void Save<T>(T user) where T : User
+		protected virtual User GetUserByMail(string email)
+		{
+			if (string.IsNullOrEmpty(email))
+			{
+				this.HandleExceptionAndThrow(new MongoProviderException(new ArgumentNullException("email")));
+			}
+
+			return this.UsersCollection.AsQueryable().FirstOrDefault(u => u.LowercaseEmail == email.ToLowerInvariant());
+		}
+
+		protected virtual User GetUserByName(string userName)
+		{
+			if (string.IsNullOrEmpty(userName))
+			{
+				this.HandleExceptionAndThrow(new MongoProviderException(new ArgumentException("userName")));
+			}
+
+			return this.UsersCollection.AsQueryable().FirstOrDefault(u => u.LowercaseUsername == userName.ToLowerInvariant());
+		}
+
+		protected virtual User GetUserById(BsonValue id)
+		{
+			if (id == null)
+			{
+				this.HandleExceptionAndThrow(new MongoProviderException(new ArgumentNullException("id")));
+			}
+
+			return this.UsersCollection.FindOneById(id);
+		}
+
+		protected virtual void SaveUser<T>(T user) where T : User
 		{
 			SafeModeResult result = null;
 			try
@@ -681,56 +982,145 @@ namespace Bikee.Security.Mongo
 			}
 			catch (Exception exception)
 			{
-				this.HandleDataExceptionAndThrow(exception);
+				this.HandleExceptionAndThrow(new MongoProviderException(exception));
 			}
 
 			if (result == null)
 			{
-				this.HandleDataExceptionAndThrow(new ProviderException("Save to database did not return a status result"));
+				this.HandleExceptionAndThrow(new MongoProviderException("SaveUser to database did not return a status result"));
 			}
 			else if (!result.Ok)
 			{
-				this.HandleDataExceptionAndThrow(new ProviderException(result.LastErrorMessage));
+				this.HandleExceptionAndThrow(new MongoProviderException(result.LastErrorMessage));
 			}
 		}
 
-		protected void HandleDataExceptionAndThrow(Exception exception)
+		protected virtual void HandleExceptionAndThrow(MongoProviderException exception)
 		{
 			if (this.WriteExceptionsToEventLog)
 			{
-				this.WriteToEventLog(exception);
-				throw new ProviderException(exception.Message, exception);
+				var log = new EventLog { Source = EventSource, Log = EventLog };
+				var message = string.Format("An exception occurred communicating with the data source.\r\n Exception: {0}", exception);
+				log.WriteEntry(message);
 			}
 
 			throw exception;
 		}
 
-		/// <summary>
-		/// WriteToEventLog
-		/// A helper function that writes exception detail to the event log. Exceptions
-		/// are written to the event log as a security measure to avoid private database
-		/// details from being returned to the browser. If a method does not return a status
-		/// or boolean indicating the action succeeded or failed, a generic exception is also
-		/// thrown by the caller.
-		/// </summary>
-		/// <param name="exception">The exception.</param>
-		protected void WriteToEventLog(Exception exception)
-		{
-			var log = new EventLog { Source = EventSource, Log = EventLog };
-
-			var message = string.Format("An exception occurred communicating with the data source.\r\n Exception: {0}", exception);
-			log.WriteEntry(message);
-		}
-
-		protected virtual MembershipUser ToMembershipUser<T>(T user) where T: User
+		protected virtual MembershipUser ToMembershipUser<T>(T user) where T : User
 		{
 			if (user == null)
 			{
 				return null;
 			}
 
-			return new MembershipUser(this.Name, user.UserName, user.Id, user.Email, user.PasswordQuestion, user.Comment, user.IsApproved, 
-				user.IsLockedOut, user.CreationDate, user.LastLoginDate, user.LastActivityDate, user.LastPasswordChangedDate,user.LastLockoutDate);
+			return new MembershipUser(this.Name, user.UserName, user.Id, user.Email, user.PasswordQuestion, user.Comment, user.IsApproved,
+				user.IsLockedOut, user.CreationDate, user.LastLoginDate, user.LastActivityDate, user.LastPasswordChangedDate, user.LastLockoutDate);
+		}
+
+		protected virtual bool ValidateUserPassword(User user, string password)
+		{
+			if (user == null || !user.IsApproved || user.IsLockedOut)
+			{
+				return false;
+			}
+
+			string encodedPassword = this.Encode(password, user.PasswordFormat);
+
+			bool isValidPassword = user.Password.Equals(encodedPassword);
+
+			if (isValidPassword && user.FailedPasswordAttemptCount == 0)
+			{
+				return true;
+			}
+
+			return this.UpdateFailurePasswordCount(user, isValidPassword);
+		}
+
+		protected virtual bool UpdateFailurePasswordCount(User user, bool isAuthenticated)
+		{
+			if (user == null || user.IsLockedOut)
+			{
+				return isAuthenticated;
+			}
+
+			if (isAuthenticated && user.FailedPasswordAttemptCount > 0)
+			{
+				user.FailedPasswordAttemptCount = 0;
+				user.FailedPasswordAttemptWindowStart = DateTime.UtcNow;
+				this.SaveUser(user);
+				return true;
+			}
+
+			var windowStart = user.FailedPasswordAttemptWindowStart;
+			var windowEnd = windowStart.AddMinutes(this.PasswordAttemptWindow);
+			var failureCount = user.FailedPasswordAttemptCount;
+
+			if (failureCount == 0 || DateTime.UtcNow > windowEnd)
+			{
+				user.FailedPasswordAttemptCount = 1;
+				user.FailedPasswordAttemptWindowStart = DateTime.UtcNow;
+				this.SaveUser(user);
+				return isAuthenticated;
+			}
+
+			// Password attempts have exceeded the failure threshold. Lock out the user.
+			if (++failureCount >= this.MaxInvalidPasswordAttempts)
+			{
+				user.IsLockedOut = true;
+				user.LastLockoutDate = DateTime.UtcNow;
+				user.FailedPasswordAttemptCount = failureCount;
+				this.SaveUser(user);
+				return isAuthenticated;
+			}
+
+			// Password attempts have not exceeded the failure threshold. Update the failure counts. Leave the window the same.
+			user.FailedPasswordAttemptCount = failureCount;
+			this.SaveUser(user);
+			return isAuthenticated;
+		}
+
+		protected virtual bool UpdateFailurePasswordAnswerCount(User user, bool isAuthenticated)
+		{
+			if (user == null || user.IsLockedOut)
+			{
+				return isAuthenticated;
+			}
+
+			if (isAuthenticated && user.FailedPasswordAnswerAttemptCount > 0)
+			{
+				user.FailedPasswordAnswerAttemptCount = 0;
+				user.FailedPasswordAnswerAttemptWindowStart = DateTime.UtcNow;
+				this.SaveUser(user);
+				return true;
+			}
+
+			var windowStart = user.FailedPasswordAnswerAttemptWindowStart;
+			var windowEnd = windowStart.AddMinutes(this.PasswordAttemptWindow);
+			var failureCount = user.FailedPasswordAnswerAttemptCount;
+
+			if (failureCount == 0 || DateTime.UtcNow > windowEnd)
+			{
+				user.FailedPasswordAnswerAttemptCount = 1;
+				user.FailedPasswordAnswerAttemptWindowStart = DateTime.UtcNow;
+				this.SaveUser(user);
+				return isAuthenticated;
+			}
+
+			// Password attempts have exceeded the failure threshold. Lock out the user.
+			if (++failureCount >= this.MaxInvalidPasswordAttempts)
+			{
+				user.IsLockedOut = true;
+				user.LastLockoutDate = DateTime.UtcNow;
+				user.FailedPasswordAnswerAttemptCount = failureCount;
+				this.SaveUser(user);
+				return isAuthenticated;
+			}
+
+			// Password attempts have not exceeded the failure threshold. Update the failure counts. Leave the window the same.
+			user.FailedPasswordAnswerAttemptCount = failureCount;
+			this.SaveUser(user);
+			return isAuthenticated;
 		}
 	}
 }

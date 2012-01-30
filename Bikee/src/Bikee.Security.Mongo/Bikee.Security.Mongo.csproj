@@ -50,6 +50,7 @@
     <Reference Include="System.Web.ApplicationServices" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MongoProviderException.cs" />
     <Compile Include="UserBsonMap.cs" />
     <Compile Include="MembershipProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
