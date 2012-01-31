@@ -1,7 +1,9 @@
 ﻿using System;
-using System.Linq;
+using System.Configuration.Provider;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
+using System.Web.Security;
 using MongoDB.Bson.Serialization;
 
 namespace Bikee.Security.Mongo
@@ -49,7 +51,7 @@ namespace Bikee.Security.Mongo
 			}
 
 			var map = BsonClassMap.LookupClassMap(typeof(TSource));
-			if (null == map)
+			if (map == null)
 			{
 				throw new ArgumentException(string.Format("Missing BsonClassMap for type {0}", type));
 			}
@@ -61,6 +63,69 @@ namespace Bikee.Security.Mongo
 			}
 
 			return memberMap.ElementName;
+		}
+
+		/// <summary>
+		/// Encodes the password. Encrypts, Hashes, or leaves the password clear based on the PasswordFormat.
+		/// </summary>
+		/// <param name="stringToBeEncoded">The string to be encoded.</param>
+		/// <param name="passwordFormatToUse">The password format to use.</param>
+		/// <returns>
+		/// The encoded password.
+		/// </returns>
+		public static string Encode(this string stringToBeEncoded, MembershipPasswordFormat passwordFormatToUse)
+		{
+			if (string.IsNullOrEmpty(stringToBeEncoded))
+			{
+				return null;
+			}
+
+			byte[] passwordData;
+			string encodedString = stringToBeEncoded;
+			switch (passwordFormatToUse)
+			{
+				case MembershipPasswordFormat.Clear:
+					break;
+				case MembershipPasswordFormat.Encrypted:
+					passwordData = Encoding.Unicode.GetBytes(encodedString);
+					encodedString = MachineKey.Encode(passwordData, MachineKeyProtection.All);
+					break;
+				case MembershipPasswordFormat.Hashed:
+					passwordData = Encoding.Unicode.GetBytes(encodedString);
+					encodedString = MachineKey.Encode(passwordData, MachineKeyProtection.Validation);
+					break;
+				default:
+					throw new Exception("Unsupported password format.");
+			}
+
+			return encodedString;
+		}
+
+		/// <summary>
+		/// TODO: Check if decode using HASH does not used with answer/question.
+		/// Decodes the password. Decrypts or leaves the password clear based on the PasswordFormat.
+		/// </summary>
+		/// <param name="stringToBeDecoded">The string to be decoded.</param>
+		/// <param name="passwordFormatToUse">The password format to use.</param>
+		/// <returns>The decoded data.</returns>
+		public static string Decode(this string stringToBeDecoded, MembershipPasswordFormat passwordFormatToUse)
+		{
+			string dencodedString = stringToBeDecoded;
+			switch (passwordFormatToUse)
+			{
+				case MembershipPasswordFormat.Clear:
+					break;
+				case MembershipPasswordFormat.Encrypted:
+					dencodedString = Encoding.Unicode.GetString(MachineKey.Decode(dencodedString, MachineKeyProtection.All));
+					break;
+				case MembershipPasswordFormat.Hashed:
+					dencodedString = Encoding.Unicode.GetString(MachineKey.Decode(dencodedString, MachineKeyProtection.Validation));
+					break;
+				default:
+					throw new ProviderException("Unsupported password format.");
+			}
+
+			return dencodedString;
 		}
 	}
 }

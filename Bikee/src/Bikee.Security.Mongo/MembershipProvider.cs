@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Specialized;
 using System.Configuration;
-using System.Configuration.Provider;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Web.Configuration;
 using System.Web.Security;
@@ -249,9 +247,9 @@ namespace Bikee.Security.Mongo
 				DisplayName = username,
 				Email = email,
 				LowercaseEmail = email.ToLowerInvariant(),
-				Password = this.Encode(password, this.PasswordFormat),
+				Password = password.Encode(this.PasswordFormat),
 				PasswordQuestion = passwordQuestion,
-				PasswordAnswer = this.Encode(passwordAnswer, this.PasswordFormat),
+				PasswordAnswer = passwordAnswer.Encode(this.PasswordFormat),
 				PasswordFormat = MembershipPasswordFormat.Clear,
 				IsApproved = isApproved,
 				LastPasswordChangedDate = DateTime.MinValue,
@@ -308,7 +306,7 @@ namespace Bikee.Security.Mongo
 			}
 
 			user.PasswordQuestion = newPasswordQuestion;
-			user.PasswordAnswer = string.IsNullOrEmpty(newPasswordAnswer) ? null : this.Encode(newPasswordAnswer, user.PasswordFormat);
+			user.PasswordAnswer = string.IsNullOrEmpty(newPasswordAnswer) ? null : newPasswordAnswer.Encode(user.PasswordFormat);
 
 			return false;
 		}
@@ -338,8 +336,8 @@ namespace Bikee.Security.Mongo
 				this.HandleExceptionAndThrow(new MongoProviderException(string.Format("User is locked out. user id: {0}", user.Id)));
 			}
 
-			var decodedCorrectAnswer = this.Decode(user.PasswordAnswer, user.PasswordFormat);
-			var decodedAnswer = this.Decode(answer, user.PasswordFormat);
+			var decodedCorrectAnswer = user.PasswordAnswer.Decode(user.PasswordFormat);
+			var decodedAnswer = answer.Decode(user.PasswordFormat);
 
 			if (this.RequiresQuestionAndAnswer && decodedCorrectAnswer == decodedAnswer)
 			{
@@ -347,7 +345,7 @@ namespace Bikee.Security.Mongo
 				this.HandleExceptionAndThrow(new MongoProviderException(string.Format("Wrong answer, user id: {0}.", user.Id)));
 			}
 
-			return this.Decode(user.Password, user.PasswordFormat);
+			return user.Password.Decode(user.PasswordFormat);
 		}
 
 		/// <summary>
@@ -416,7 +414,7 @@ namespace Bikee.Security.Mongo
 			}
 
 			// Save new password
-			user.Password = this.Encode(newPassword, this.PasswordFormat);
+			user.Password = newPassword.Encode(this.PasswordFormat);
 			user.PasswordFormat = this.PasswordFormat;
 			user.LastPasswordChangedDate = DateTime.UtcNow;
 			this.SaveUser(user);
@@ -448,8 +446,8 @@ namespace Bikee.Security.Mongo
 				this.HandleExceptionAndThrow(new MongoProviderException(string.Format("User is locked out. user id: {0}", user.Id)));
 			}
 
-			var decodedCorrectAnswer = this.Decode(user.PasswordAnswer, user.PasswordFormat);
-			var decodedAnswer = this.Decode(answer, user.PasswordFormat);
+			var decodedCorrectAnswer = user.PasswordAnswer.Decode(user.PasswordFormat);
+			var decodedAnswer = answer.Decode(user.PasswordFormat);
 
 			if (this.RequiresQuestionAndAnswer && decodedCorrectAnswer == decodedAnswer)
 			{
@@ -472,7 +470,7 @@ namespace Bikee.Security.Mongo
 			}
 
 			// Save new password
-			user.Password = this.Encode(newGeneratedPassword, this.PasswordFormat);
+			user.Password = newGeneratedPassword.Decode(this.PasswordFormat);
 			user.PasswordFormat = this.PasswordFormat;
 			user.LastPasswordChangedDate = DateTime.UtcNow;
 			this.SaveUser(user);
@@ -880,68 +878,6 @@ namespace Bikee.Security.Mongo
 			DateTimeSerializationOptions.Defaults = DateTimeSerializationOptions.LocalInstance;
 		}
 
-		/// <summary>
-		/// Encodes the password. Encrypts, Hashes, or leaves the password clear based on the PasswordFormat.
-		/// </summary>
-		/// <param name="stringToBeEncoded">The string to be encoded.</param>
-		/// <param name="passwordFormatToUse">The password format to use.</param>
-		/// <returns>
-		/// The encoded password.
-		/// </returns>
-		protected virtual string Encode(string stringToBeEncoded, MembershipPasswordFormat passwordFormatToUse)
-		{
-			if (string.IsNullOrEmpty(stringToBeEncoded))
-			{
-				return null;
-			}
-
-			byte[] passwordData;
-			string encodedString = stringToBeEncoded;
-			switch (passwordFormatToUse)
-			{
-				case MembershipPasswordFormat.Clear:
-					break;
-				case MembershipPasswordFormat.Encrypted:
-					passwordData = Encoding.Unicode.GetBytes(encodedString);
-					encodedString = MachineKey.Encode(passwordData, MachineKeyProtection.All);
-					break;
-				case MembershipPasswordFormat.Hashed:
-					passwordData = Encoding.Unicode.GetBytes(encodedString);
-					encodedString = MachineKey.Encode(passwordData, MachineKeyProtection.Validation);
-					break;
-				default:
-					throw new ProviderException("Unsupported password format.");
-			}
-
-			return encodedString;
-		}
-
-		/// <summary>
-		/// Decodes the password. Decrypts or leaves the password clear based on the PasswordFormat.
-		/// </summary>
-		/// <param name="stringToBeDecoded">The string to be decoded.</param>
-		/// <param name="passwordFormatToUse">The password format to use.</param>
-		/// <returns>The decoded data.</returns>
-		protected virtual string Decode(string stringToBeDecoded, MembershipPasswordFormat passwordFormatToUse)
-		{
-			string dencodedString = stringToBeDecoded;
-			switch (passwordFormatToUse)
-			{
-				case MembershipPasswordFormat.Clear:
-					break;
-				case MembershipPasswordFormat.Encrypted:
-					dencodedString = Encoding.Unicode.GetString(MachineKey.Decode(dencodedString, MachineKeyProtection.All));
-					break;
-				case MembershipPasswordFormat.Hashed:
-					dencodedString = Encoding.Unicode.GetString(MachineKey.Decode(dencodedString, MachineKeyProtection.Validation));
-					break;
-				default:
-					throw new ProviderException("Unsupported password format.");
-			}
-
-			return dencodedString;
-		}
-
 		protected virtual User GetUserByMail(string email)
 		{
 			if (string.IsNullOrEmpty(email))
@@ -1025,7 +961,7 @@ namespace Bikee.Security.Mongo
 				return false;
 			}
 
-			string encodedPassword = this.Encode(password, user.PasswordFormat);
+			string encodedPassword = password.Encode(user.PasswordFormat);
 
 			bool isValidPassword = user.Password.Equals(encodedPassword);
 
