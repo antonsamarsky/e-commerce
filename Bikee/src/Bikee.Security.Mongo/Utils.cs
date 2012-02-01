@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Configuration.Provider;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Web.Security;
 using MongoDB.Bson.Serialization;
@@ -80,25 +80,20 @@ namespace Bikee.Security.Mongo
 				return null;
 			}
 
-			byte[] passwordData;
-			string encodedString = stringToBeEncoded;
 			switch (passwordFormatToUse)
 			{
 				case MembershipPasswordFormat.Clear:
-					break;
+					return stringToBeEncoded;
 				case MembershipPasswordFormat.Encrypted:
-					passwordData = Encoding.Unicode.GetBytes(encodedString);
-					encodedString = MachineKey.Encode(passwordData, MachineKeyProtection.All);
-					break;
+					var unicodeArrayToEncrypt = Encoding.Unicode.GetBytes(stringToBeEncoded);
+					return MachineKey.Encode(unicodeArrayToEncrypt, MachineKeyProtection.All);
 				case MembershipPasswordFormat.Hashed:
-					passwordData = Encoding.Unicode.GetBytes(encodedString);
-					encodedString = MachineKey.Encode(passwordData, MachineKeyProtection.Validation);
-					break;
+					var unicodeArrayToHash = Encoding.Unicode.GetBytes(stringToBeEncoded);
+					var inArray = HashAlgorithm.Create(Membership.HashAlgorithmType).ComputeHash(unicodeArrayToHash);
+					return Convert.ToBase64String(inArray);
 				default:
-					throw new Exception("Unsupported password format.");
+					throw new MembershipPasswordException("Unsupported password format.");
 			}
-
-			return encodedString;
 		}
 
 		/// <summary>
@@ -110,22 +105,39 @@ namespace Bikee.Security.Mongo
 		/// <returns>The decoded data.</returns>
 		public static string Decode(this string stringToBeDecoded, MembershipPasswordFormat passwordFormatToUse)
 		{
-			string dencodedString = stringToBeDecoded;
 			switch (passwordFormatToUse)
 			{
 				case MembershipPasswordFormat.Clear:
-					break;
+					return stringToBeDecoded;
 				case MembershipPasswordFormat.Encrypted:
-					dencodedString = Encoding.Unicode.GetString(MachineKey.Decode(dencodedString, MachineKeyProtection.All));
-					break;
+					return Encoding.Unicode.GetString(MachineKey.Decode(stringToBeDecoded, MachineKeyProtection.All));
 				case MembershipPasswordFormat.Hashed:
-					dencodedString = Encoding.Unicode.GetString(MachineKey.Decode(dencodedString, MachineKeyProtection.Validation));
-					break;
+					throw new MembershipPasswordException("Cannot decode a hashed password.");
 				default:
-					throw new ProviderException("Unsupported password format.");
+					throw new MembershipPasswordException("Unsupported password format.");
 			}
+		}
 
-			return dencodedString;
+		/// <summary>
+		/// Checks the specified password.
+		/// </summary>
+		/// <param name="password">The password.</param>
+		/// <param name="correctPassword">The correct password.</param>
+		/// <param name="passwordFormat">The password format.</param>
+		/// <returns></returns>
+		public static bool ComparePassword(this string password, string correctPassword, MembershipPasswordFormat passwordFormat)
+		{
+			switch (passwordFormat)
+			{
+				case MembershipPasswordFormat.Encrypted:
+					var correct = Decode(correctPassword, MembershipPasswordFormat.Encrypted);
+					return correct == password;
+				case MembershipPasswordFormat.Hashed:
+					var hash = Encode(password, MembershipPasswordFormat.Hashed);
+					return hash == correctPassword;
+				default:
+					return password == correctPassword;
+			}
 		}
 	}
 }

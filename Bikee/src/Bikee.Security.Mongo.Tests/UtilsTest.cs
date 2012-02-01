@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security;
 using System.Web.Security;
 using Bikee.Security.Domain;
 using FluentAssertions;
@@ -38,26 +39,41 @@ namespace Bikee.Security.Mongo.Tests
 			Utils.GetElementNameFor<User>(u => u.UserName).Should().Be("UserName");
 		}
 
-		[TestCase(@"User @#$@$@%@%@#^%^&%^*^&(^&() password 1234_345354.?.asdf'sfaf';34[053-5;as'", MembershipPasswordFormat.Clear, Result = @"User @#$@$@%@%@#^%^&%^*^&(^&() password 1234_345354.?.asdf'sfaf';34[053-5;as'")]
-		[TestCase(@"User @#$@$@%@%@#^%^&%^*^&(^&() password 1234_345354.?.asdf'sfaf';34[053-5;as'", MembershipPasswordFormat.Hashed, Result = @"55007300650072002000400023002400400024004000250040002500400023005E0025005E00260025005E002A005E00260028005E002600280029002000700061007300730077006F0072006400200031003200330034005F003300340035003300350034002E003F002E0061007300640066002700730066006100660027003B00330034005B003000350033002D0035003B00610073002700AB85D1A6E941FFB3A1FFC66B4BAC0A683CEC72F8")]
-		public string EncodeTest(string inputString, MembershipPasswordFormat passwordFormat)
+		[TestCase(@"1234567890-=!@#$%^&*()_+qwertyuiop[]asdfghjkl;'\zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:|ZXCVBNM<>?")]
+		public void EncodeDecodeUsingHashingTest(string inputString)
 		{
-			return inputString.Encode(passwordFormat);
-		}
+			var hash1 = inputString.Encode(MembershipPasswordFormat.Hashed);
+			hash1.Should().NotBe(inputString);
 
-		[TestCase(@"User @#$@$@%@%@#^%^&%^*^&(^&() password 1234_345354.?.asdf'sfaf';34[053-5;as'", MembershipPasswordFormat.Clear, Result = @"User @#$@$@%@%@#^%^&%^*^&(^&() password 1234_345354.?.asdf'sfaf';34[053-5;as'")]
-		[TestCase(@"hash" , MembershipPasswordFormat.Hashed, ExpectedException = typeof(ArgumentException))]
-		public string DecodeTest(string inputString, MembershipPasswordFormat passwordFormat)
-		{
-			return inputString.Decode(passwordFormat);
+			var hash2 = inputString.Encode(MembershipPasswordFormat.Hashed);
+			hash2.Should().NotBe(inputString);
+			hash2.Should().NotBe(hash1);
+
+			Assert.Throws<SecurityException>(() => hash1.Decode(MembershipPasswordFormat.Hashed));
 		}
 
 		[TestCase(@"1234567890-=!@#$%^&*()_+qwertyuiop[]asdfghjkl;'\zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:|ZXCVBNM<>?")]
-		public void EncodeDecodeEncryptTest(string input)
+		public void EncodeDecodeUsingEncryptionTest(string input)
 		{
-			var encrypted = input.Encode(MembershipPasswordFormat.Encrypted);
-			var dencrypted = encrypted.Decode(MembershipPasswordFormat.Encrypted);
+			var encrypted1 = input.Encode(MembershipPasswordFormat.Encrypted);
+			encrypted1.Should().NotBe(input);
 
+			var encrypted2 = input.Encode(MembershipPasswordFormat.Encrypted);
+			encrypted2.Should().NotBe(input);
+			encrypted2.Should().NotBe(encrypted1);
+
+			var dencrypted1 = encrypted1.Decode(MembershipPasswordFormat.Encrypted);
+			var dencrypted2 = encrypted2.Decode(MembershipPasswordFormat.Encrypted);
+			dencrypted1.Should().Be(dencrypted2);
+		}
+
+		[TestCase(@"1234567890-=!@#$%^&*()_+qwertyuiop[]asdfghjkl;'\zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:|ZXCVBNM<>?")]
+		public void EncodeDecodeUsingNothingTest(string input)
+		{
+			var encrypted = input.Encode(MembershipPasswordFormat.Clear);
+			encrypted.Should().Be(input);
+
+			var dencrypted = encrypted.Decode(MembershipPasswordFormat.Clear);
 			dencrypted.Should().Be(input);
 		}
 	}
