@@ -50,11 +50,13 @@
     <Reference Include="System.Web.ApplicationServices" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MongoProviderException.cs" />
+    <Compile Include="MembershipProviderBase.cs" />
+    <Compile Include="MongoMembershipProvider.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="UserBsonMap.cs" />
-    <Compile Include="MembershipProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RoleProvider.cs" />
+    <Compile Include="MongoRoleProvider.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>

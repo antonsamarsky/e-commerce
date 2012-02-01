@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Security;
 using System.Web.Security;
 using Bikee.Security.Domain;
 using FluentAssertions;
@@ -49,7 +48,7 @@ namespace Bikee.Security.Mongo.Tests
 			hash2.Should().NotBe(inputString);
 			hash2.Should().NotBe(hash1);
 
-			Assert.Throws<SecurityException>(() => hash1.Decode(MembershipPasswordFormat.Hashed));
+			Assert.Throws<MembershipPasswordException>(() => hash1.Decode(MembershipPasswordFormat.Hashed));
 		}
 
 		[TestCase(@"1234567890-=!@#$%^&*()_+qwertyuiop[]asdfghjkl;'\zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:|ZXCVBNM<>?")]

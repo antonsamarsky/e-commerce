@@ -5,14 +5,14 @@ using NUnit.Framework;
 namespace Bikee.Security.Mongo.Tests
 {
 	[TestFixture]
-	public class MembershipProviderTest
+	public class MongoMembershipProviderTest
 	{
-		private MembershipProvider provider;
+		private MongoMembershipProvider provider;
 
 		[SetUp]
 		public void Init()
 		{
-			this.provider = (MembershipProvider)Membership.Provider;
+			this.provider = (MongoMembershipProvider)Membership.Provider;
 		}
 
 		[Test]
@@ -24,13 +24,9 @@ namespace Bikee.Security.Mongo.Tests
 			this.provider.CollectionName.Should().NotBeNull();
 		}
 
-		[Test]
-		public void CreateUserTest()
+		[TestCase("User name", "email@mail.com", true)]
+		public void CreateUserTest(string userName, string email, bool isApproved)
 		{
-			var userName = "user";
-			var email = "user@em.ail";
-			var isApproved = true;
-
 			MembershipCreateStatus status;
 			var user = this.provider.CreateUser(userName, "password_", email, string.Empty, string.Empty, isApproved, null, out status);
 

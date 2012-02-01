@@ -1,8 +1,8 @@
 ﻿namespace Bikee.Security.Mongo
 {
-	public class RoleProvider : System.Web.Security.RoleProvider
+	public class MongoRoleProvider : System.Web.Security.RoleProvider
 	{
-		#region Overrides of RoleProvider
+		#region Overrides of MongoRoleProvider
 
 		/// <summary>
 		/// Gets a value indicating whether the specified user is in the specified role for the configured applicationName.
