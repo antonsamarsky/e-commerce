@@ -1,6 +1,10 @@
-﻿namespace Bikee.Security.Mongo.Tests
+﻿using Bikee.Mongo.Tests;
+using NUnit.Framework;
+
+namespace Bikee.Security.Mongo.Tests
 {
-	public class MongoRoleProviderTest
+	[TestFixture]
+	public class MongoRoleProviderTest : MongoTestBase
 	{
 		 
 	}

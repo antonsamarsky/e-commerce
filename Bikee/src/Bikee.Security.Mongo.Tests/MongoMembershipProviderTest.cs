@@ -1,11 +1,12 @@
 ﻿using System.Web.Security;
+using Bikee.Mongo.Tests;
 using FluentAssertions;
 using NUnit.Framework;
 
 namespace Bikee.Security.Mongo.Tests
 {
 	[TestFixture]
-	public class MongoMembershipProviderTest
+	public class MongoMembershipProviderTest : MongoTestBase
 	{
 		private MongoMembershipProvider provider;
 
@@ -19,18 +20,16 @@ namespace Bikee.Security.Mongo.Tests
 		public void InitTest()
 		{
 			this.provider.Should().NotBeNull();
-			this.provider.Database.Should().NotBeNull();
 			this.provider.UsersCollection.Should().NotBeNull();
-			this.provider.CollectionName.Should().NotBeNull();
 		}
 
 		[TestCase("User name", "email@mail.com", true)]
 		public void CreateUserTest(string userName, string email, bool isApproved)
 		{
 			MembershipCreateStatus status;
-			var user = this.provider.CreateUser(userName, "password_", email, string.Empty, string.Empty, isApproved, null, out status);
+			var user = this.provider.CreateUser(userName, "password_", email, null, null, isApproved, null, out status);
 
-			Assert.That(status == MembershipCreateStatus.Success);
+			status.Should().Be(MembershipCreateStatus.Success);
 			user.Should().NotBeNull();
 
 			Assert.That(user.UserName == userName);

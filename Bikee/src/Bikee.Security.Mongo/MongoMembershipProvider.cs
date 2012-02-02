@@ -6,6 +6,7 @@ using System.Web.Security;
 using Bikee.Security.Domain;
 using FluentMongo.Linq;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Options;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
@@ -16,20 +17,16 @@ namespace Bikee.Security.Mongo
 	{
 		private const int NewPasswordLength = 8;
 
-		private string usersCollectionName;
-		
-		public string CollectionName { get; set; }
+		public string UsersCollectionName { get; private set; }
 
 		public MongoCollection<User> UsersCollection { get; set; }
-
-		public MongoDatabase Database { get; set; }
 
 		public override void Initialize(string name, NameValueCollection config)
 		{
 			base.Initialize(name, config);
 
 			// MongoDB specific setting
-			this.usersCollectionName = Utils.GetConfigValue(config["usersCollectionName"], "users");
+			this.UsersCollectionName = Utils.GetConfigValue(config["usersCollectionName"], "users");
 
 			this.RegisterMapping();
 			this.InitDatabse();
@@ -59,8 +56,8 @@ namespace Bikee.Security.Mongo
 				Email = email.Trim(),
 				LowercaseEmail = email.Trim().ToLowerInvariant(),
 				Password = password.Encode(this.PasswordFormat),
-				PasswordQuestion = passwordQuestion.Trim(),
-				PasswordAnswer = passwordAnswer.Trim().Encode(this.PasswordFormat),
+				PasswordQuestion = this.RequiresQuestionAndAnswer ? passwordQuestion.Trim() : null,
+				PasswordAnswer =  this.RequiresQuestionAndAnswer ? passwordAnswer.Trim().Encode(this.PasswordFormat) : null,
 				PasswordFormat = this.PasswordFormat,
 				IsApproved = isApproved,
 				LastPasswordChangedDate = DateTime.MinValue,
@@ -76,7 +73,7 @@ namespace Bikee.Security.Mongo
 			};
 
 			this.Save(user);
-			return this.GetUser(providerUserKey, false);
+			return this.ToMembershipUser(user);
 		}
 
 		public override bool ChangePasswordQuestionAndAnswer(string username, string password, string newPasswordQuestion, string newPasswordAnswer)
@@ -266,10 +263,23 @@ namespace Bikee.Security.Mongo
 				throw new ArgumentException("id");
 			}
 
-			var user = this.UsersCollection.FindOneById(id);
+			var query = Query.EQ(Utils.GetElementNameFor<User>(u => u.Id), id);
+			var update = Update.Set(Utils.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
 
-			// ToDo Save data using find and modify
-			user.LastActivityDate = DateTime.UtcNow;
+			var result = this.UsersCollection.FindAndModify(query, SortBy.Null, update, true);
+
+			if (!result.Ok)
+			{
+				this.HandleExceptionAndThrow(new ProviderException(result.ErrorMessage));
+			}
+
+			var document = result.ModifiedDocument;
+			if (document == null)
+			{
+				return null;
+			}
+
+			var user = BsonSerializer.Deserialize<User>(document);
 
 			return this.ToMembershipUser(user);
 		}
@@ -280,8 +290,6 @@ namespace Bikee.Security.Mongo
 
 			var user = this.GetUserByName(username);
 
-			// ToDo Save data using find and modify
-			user.LastActivityDate = DateTime.UtcNow;
 			return this.ToMembershipUser(user);
 		}
 
@@ -290,9 +298,7 @@ namespace Bikee.Security.Mongo
 			base.GetUserNameByEmail(email);
 
 			var user = this.GetUserByMail(email);
-			// ToDo Save data using find and modify
-			user.LastActivityDate = DateTime.UtcNow;
-			return user.UserName;
+			return user == null ? null : user.UserName;
 		}
 
 		public override bool DeleteUser(string username, bool deleteAllRelatedData)
@@ -399,9 +405,8 @@ namespace Bikee.Security.Mongo
 
 		protected virtual void InitDatabse()
 		{
-			this.Database = MongoDatabase.Create(this.ConnectionString);
-			this.CollectionName = this.usersCollectionName;
-			this.UsersCollection = Database.GetCollection<User>(CollectionName);
+			var database = MongoDatabase.Create(this.ConnectionString);
+			this.UsersCollection = database.GetCollection<User>(this.UsersCollectionName);
 
 			DateTimeSerializationOptions.Defaults = DateTimeSerializationOptions.LocalInstance;
 		}
@@ -411,9 +416,21 @@ namespace Bikee.Security.Mongo
 			if (string.IsNullOrEmpty(email))
 			{
 				this.HandleExceptionAndThrow(new ArgumentNullException("email"));
+				return null;
 			}
 
-			return this.UsersCollection.AsQueryable().FirstOrDefault(u => u.LowercaseEmail == email.ToLowerInvariant());
+			var query = Query.EQ(Utils.GetElementNameFor<User>(u => u.LowercaseEmail), email.ToLowerInvariant());
+			var update = Update.Set(Utils.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
+
+			var result = this.UsersCollection.FindAndModify(query, SortBy.Null, update, true);
+
+			if (!result.Ok)
+			{
+				this.HandleExceptionAndThrow(new ProviderException(result.ErrorMessage));
+			}
+
+			var document = result.ModifiedDocument;
+			return document == null ? null : BsonSerializer.Deserialize<User>(document);
 		}
 
 		protected virtual User GetUserByName(string userName)
@@ -421,9 +438,21 @@ namespace Bikee.Security.Mongo
 			if (string.IsNullOrEmpty(userName))
 			{
 				this.HandleExceptionAndThrow(new ArgumentException("userName"));
+				return null;
 			}
 
-			return this.UsersCollection.AsQueryable().FirstOrDefault(u => u.LowercaseUsername == userName.ToLowerInvariant());
+			var query = Query.EQ(Utils.GetElementNameFor<User>(u => u.LowercaseUsername), userName.ToLowerInvariant());
+			var update = Update.Set(Utils.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
+
+			var result = this.UsersCollection.FindAndModify(query, SortBy.Null, update, true);
+
+			if (!result.Ok)
+			{
+				this.HandleExceptionAndThrow(new ProviderException(result.ErrorMessage));
+			}
+
+			var document = result.ModifiedDocument;
+			return document == null ? null : BsonSerializer.Deserialize<User>(document);
 		}
 
 		protected virtual void Save<T>(T user) where T : User

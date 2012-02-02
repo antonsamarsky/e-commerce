@@ -213,7 +213,7 @@ namespace Bikee.Security.Mongo
 			this.requiresQuestionAndAnswer = Utils.GetConfigValue(config["requiresQuestionAndAnswer"], false);
 			this.requiresUniqueEmail = Utils.GetConfigValue(config["requiresUniqueEmail"], true);
 
-			this.InvalidUsernameCharacters = Utils.GetConfigValue(config["invalidUsernameCharacters"], ",%\"/{}()'' ");
+			this.InvalidUsernameCharacters = Utils.GetConfigValue(config["invalidUsernameCharacters"], ",%\"/{}()''");
 			this.InvalidEmailCharacters = Utils.GetConfigValue(config["invalidEmailCharacters"], ",%\"/{}()''");
 			this.WriteExceptionsToEventLog = Utils.GetConfigValue(config["writeExceptionsToEventLog"], true);
 
@@ -315,7 +315,7 @@ namespace Bikee.Security.Mongo
 				return null;
 			}
 
-			if (this.GetUser(providerUserKey, false) != null)
+			if (providerUserKey != null && this.GetUser(providerUserKey, false) != null)
 			{
 				status = MembershipCreateStatus.DuplicateProviderUserKey;
 				return null;
@@ -667,7 +667,7 @@ namespace Bikee.Security.Mongo
 		{
 			if (!this.RequiresQuestionAndAnswer)
 			{
-				return null;
+				return string.Empty;
 			}
 
 			if (string.IsNullOrEmpty(question))
@@ -689,7 +689,7 @@ namespace Bikee.Security.Mongo
 		{
 			if (!this.RequiresQuestionAndAnswer)
 			{
-				return null;
+				return string.Empty;
 			}
 
 			if (string.IsNullOrEmpty(answer))
@@ -708,7 +708,6 @@ namespace Bikee.Security.Mongo
 		}
 
 		#endregion
-
 
 		protected virtual void HandleExceptionAndThrow<T>(T exception) where T : Exception
 		{
