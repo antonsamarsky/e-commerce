@@ -2,7 +2,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Bikee.Security.Domain
+namespace Bikee.Security
 {
 	/// <summary>
 	/// http://msdn.microsoft.com/en-us/magazine/cc164107.aspx

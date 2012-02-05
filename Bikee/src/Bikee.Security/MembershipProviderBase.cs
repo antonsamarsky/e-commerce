@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 using System.Web.Configuration;
 using System.Web.Security;
 
-namespace Bikee.Security.Domain
+namespace Bikee.Security
 {
 	// How to: Sample Membership Provider Implementation :
 	// http://msdn.microsoft.com/en-us/library/ie/6tc47t75.aspx

@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Security.Mongo", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Security.Mongo.Tests", "src\Bikee.Security.Mongo.Tests\Bikee.Security.Mongo.Tests.csproj", "{8054C282-ABDF-496E-9DF6-98ECB6A5FF82}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Security.Domain", "src\Bikee.Security.Domain\Bikee.Security.Domain.csproj", "{BD31D54C-596B-403B-A068-CE2E5393D472}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Security", "src\Bikee.Security\Bikee.Security.csproj", "{BD31D54C-596B-403B-A068-CE2E5393D472}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bikee.Bson", "src\Bikee.Bson\Bikee.Bson.csproj", "{3604FA0E-FD33-4CDC-8DF9-3A77D210000E}"
 EndProject

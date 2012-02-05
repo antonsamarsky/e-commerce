@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Web.Security;
-using Bikee.Security.Domain;
 using FluentAssertions;
 using NUnit.Framework;
 

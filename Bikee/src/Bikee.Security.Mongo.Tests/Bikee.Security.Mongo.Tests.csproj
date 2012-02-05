@@ -77,9 +77,9 @@
       <Project>{A721801B-0CE2-4035-8C01-1D95D0EF78AE}</Project>
       <Name>Bikee.Mongo.Tests</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Bikee.Security.Domain\Bikee.Security.Domain.csproj">
+    <ProjectReference Include="..\Bikee.Security\Bikee.Security.csproj">
       <Project>{BD31D54C-596B-403B-A068-CE2E5393D472}</Project>
-      <Name>Bikee.Security.Domain</Name>
+      <Name>Bikee.Security</Name>
     </ProjectReference>
     <ProjectReference Include="..\Bikee.Security.Mongo\Bikee.Security.Mongo.csproj">
       <Project>{326A083D-3589-441A-B7E4-67BAE48E80B2}</Project>

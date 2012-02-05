@@ -3,7 +3,6 @@ using System.Collections.Specialized;
 using System.Configuration;
 using System.Web.Security;
 using Bikee.Mongo.Tests;
-using Bikee.Security.Domain;
 using FluentAssertions;
 using MongoDB.Bson;
 using NUnit.Framework;

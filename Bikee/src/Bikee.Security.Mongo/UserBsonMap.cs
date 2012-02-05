@@ -1,5 +1,4 @@
 ﻿using Bikee.Bson;
-using Bikee.Security.Domain;
 
 namespace Bikee.Security.Mongo
 {

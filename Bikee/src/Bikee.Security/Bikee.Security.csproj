@@ -8,8 +8,8 @@
     <ProjectGuid>{BD31D54C-596B-403B-A068-CE2E5393D472}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Bikee.Security.Domain</RootNamespace>
-    <AssemblyName>Bikee.Security.Domain</AssemblyName>
+    <RootNamespace>Bikee.Security</RootNamespace>
+    <AssemblyName>Bikee.Security</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

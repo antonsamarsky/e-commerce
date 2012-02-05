@@ -66,9 +66,9 @@
       <Project>{3604FA0E-FD33-4CDC-8DF9-3A77D210000E}</Project>
       <Name>Bikee.Bson</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Bikee.Security.Domain\Bikee.Security.Domain.csproj">
+    <ProjectReference Include="..\Bikee.Security\Bikee.Security.csproj">
       <Project>{BD31D54C-596B-403B-A068-CE2E5393D472}</Project>
-      <Name>Bikee.Security.Domain</Name>
+      <Name>Bikee.Security</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

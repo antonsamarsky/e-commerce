@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Web.Security;
 
-namespace Bikee.Security.Domain
+namespace Bikee.Security
 {
 	[Serializable]
 	public class User

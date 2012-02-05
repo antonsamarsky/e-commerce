@@ -3,7 +3,6 @@ using System.Collections.Specialized;
 using System.Configuration.Provider;
 using System.Linq;
 using System.Web.Security;
-using Bikee.Security.Domain;
 using FluentMongo.Linq;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;

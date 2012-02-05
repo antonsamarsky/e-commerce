@@ -1,5 +1,4 @@
 ﻿using System.Web.Security;
-using Bikee.Security.Domain;
 using FluentAssertions;
 using NUnit.Framework;
 

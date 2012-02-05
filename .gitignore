@@ -4,14 +4,14 @@ Bikee/src/Bikee.Web/bin
 Bikee/src/Bikee.Web/obj
 Bikee/src/Bikee.Web.Tests/bin
 Bikee/src/Bikee.Web.Tests/obj
+Bikee/src/Bikee.Security/bin
+Bikee/src/Bikee.Security/obj
 Bikee/src/Bikee.Security.Mongo/bin
 Bikee/src/Bikee.Security.Mongo/obj
 Bikee/src/Bikee.Security.Mongo.Tests/bin
 Bikee/src/Bikee.Security.Mongo.Tests/obj
 Bikee/src/Bikee.Bson/bin
 Bikee/src/Bikee.Bson/obj
-Bikee/src/Bikee.Security.Domain/bin
-Bikee/src/Bikee.Security.Domain/obj
 Bikee/src/Bikee.Mongo.Tests/bin
 Bikee/src/Bikee.Mongo.Tests/obj
 Bikee/TestResults
