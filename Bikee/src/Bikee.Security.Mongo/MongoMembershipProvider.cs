@@ -26,7 +26,7 @@ namespace Bikee.Security.Mongo
 			base.Initialize(name, config);
 
 			// MongoDB specific setting
-			this.UsersCollectionName = Utils.GetConfigValue(config["usersCollectionName"], "users");
+			this.UsersCollectionName = SecurityHelper.GetConfigValue(config["usersCollectionName"], "users");
 
 			this.RegisterMapping();
 			this.InitDatabse();
@@ -272,8 +272,8 @@ namespace Bikee.Security.Mongo
 				throw new ArgumentException("id");
 			}
 
-			var query = Query.EQ(Utils.GetElementNameFor<User>(u => u.Id), id);
-			var update = Update.Set(Utils.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
+			var query = Query.EQ(MongoHelper.GetElementNameFor<User>(u => u.Id), id);
+			var update = Update.Set(MongoHelper.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
 
 			var result = this.UsersCollection.FindAndModify(query, SortBy.Null, update, true);
 
@@ -317,7 +317,7 @@ namespace Bikee.Security.Mongo
 				return false;
 			}
 
-			var query = Query.EQ(Utils.GetElementNameFor<User>(u => u.LowercaseUsername), username.ToLowerInvariant());
+			var query = Query.EQ(MongoHelper.GetElementNameFor<User>(u => u.LowercaseUsername), username.ToLowerInvariant());
 
 			var result = this.UsersCollection.Remove(query, SafeMode.True);
 			return result.Ok;
@@ -428,8 +428,8 @@ namespace Bikee.Security.Mongo
 				return null;
 			}
 
-			var query = Query.EQ(Utils.GetElementNameFor<User>(u => u.LowercaseEmail), email.ToLowerInvariant());
-			var update = Update.Set(Utils.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
+			var query = Query.EQ(MongoHelper.GetElementNameFor<User>(u => u.LowercaseEmail), email.ToLowerInvariant());
+			var update = Update.Set(MongoHelper.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
 
 			var result = this.UsersCollection.FindAndModify(query, SortBy.Null, update, true);
 
@@ -450,8 +450,8 @@ namespace Bikee.Security.Mongo
 				return null;
 			}
 
-			var query = Query.EQ(Utils.GetElementNameFor<User>(u => u.LowercaseUsername), userName.ToLowerInvariant());
-			var update = Update.Set(Utils.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
+			var query = Query.EQ(MongoHelper.GetElementNameFor<User>(u => u.LowercaseUsername), userName.ToLowerInvariant());
+			var update = Update.Set(MongoHelper.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
 
 			var result = this.UsersCollection.FindAndModify(query, SortBy.Null, update, true);
 

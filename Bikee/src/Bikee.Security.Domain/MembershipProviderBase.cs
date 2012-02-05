@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 using System.Web.Configuration;
 using System.Web.Security;
 
-namespace Bikee.Security.Mongo
+namespace Bikee.Security.Domain
 {
 	// How to: Sample Membership Provider Implementation :
 	// http://msdn.microsoft.com/en-us/library/ie/6tc47t75.aspx
@@ -202,20 +202,20 @@ namespace Bikee.Security.Mongo
 
 			base.Initialize(name, config);
 
-			this.applicationName = Utils.GetConfigValue(config["applicationName"], System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath);
-			this.maxInvalidPasswordAttempts = Utils.GetConfigValue(config["maxInvalidPasswordAttempts"], 5);
-			this.passwordAttemptWindow = Utils.GetConfigValue(config["passwordAttemptWindow"], 10);
-			this.minRequiredNonAlphanumericCharacters = Utils.GetConfigValue(config["minRequiredNonAlphanumericCharacters"], 1);
-			this.minRequiredPasswordLength = Utils.GetConfigValue(config["minRequiredPasswordLength"], 7);
-			this.passwordStrengthRegularExpression = Utils.GetConfigValue(config["passwordStrengthRegularExpression"], string.Empty);
-			this.enablePasswordReset = Utils.GetConfigValue(config["enablePasswordReset"], true);
-			this.enablePasswordRetrieval = Utils.GetConfigValue(config["enablePasswordRetrieval"], false);
-			this.requiresQuestionAndAnswer = Utils.GetConfigValue(config["requiresQuestionAndAnswer"], false);
-			this.requiresUniqueEmail = Utils.GetConfigValue(config["requiresUniqueEmail"], true);
+			this.applicationName = SecurityHelper.GetConfigValue(config["applicationName"], System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath);
+			this.maxInvalidPasswordAttempts = SecurityHelper.GetConfigValue(config["maxInvalidPasswordAttempts"], 5);
+			this.passwordAttemptWindow = SecurityHelper.GetConfigValue(config["passwordAttemptWindow"], 10);
+			this.minRequiredNonAlphanumericCharacters = SecurityHelper.GetConfigValue(config["minRequiredNonAlphanumericCharacters"], 1);
+			this.minRequiredPasswordLength = SecurityHelper.GetConfigValue(config["minRequiredPasswordLength"], 7);
+			this.passwordStrengthRegularExpression = SecurityHelper.GetConfigValue(config["passwordStrengthRegularExpression"], string.Empty);
+			this.enablePasswordReset = SecurityHelper.GetConfigValue(config["enablePasswordReset"], true);
+			this.enablePasswordRetrieval = SecurityHelper.GetConfigValue(config["enablePasswordRetrieval"], false);
+			this.requiresQuestionAndAnswer = SecurityHelper.GetConfigValue(config["requiresQuestionAndAnswer"], false);
+			this.requiresUniqueEmail = SecurityHelper.GetConfigValue(config["requiresUniqueEmail"], true);
 
-			this.InvalidUsernameCharacters = Utils.GetConfigValue(config["invalidUsernameCharacters"], ",%\"/{}()''");
-			this.InvalidEmailCharacters = Utils.GetConfigValue(config["invalidEmailCharacters"], ",%\"/{}()''");
-			this.WriteExceptionsToEventLog = Utils.GetConfigValue(config["writeExceptionsToEventLog"], true);
+			this.InvalidUsernameCharacters = SecurityHelper.GetConfigValue(config["invalidUsernameCharacters"], ",%\"/{}()''");
+			this.InvalidEmailCharacters = SecurityHelper.GetConfigValue(config["invalidEmailCharacters"], ",%\"/{}()''");
+			this.WriteExceptionsToEventLog = SecurityHelper.GetConfigValue(config["writeExceptionsToEventLog"], true);
 
 			string passwordFormatConfig = config["passwordFormat"] ?? "Hashed";
 			switch (passwordFormatConfig)

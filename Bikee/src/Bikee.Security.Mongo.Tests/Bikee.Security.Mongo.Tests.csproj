@@ -58,8 +58,9 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MongoRoleProviderTest.cs" />
+    <Compile Include="SecurityHelperTest.cs" />
     <Compile Include="UserBsonMapTest.cs" />
-    <Compile Include="UtilsTest.cs" />
+    <Compile Include="MongoHelperTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

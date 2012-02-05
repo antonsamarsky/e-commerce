@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Specialized;
 using System.Configuration;
-using System.Reflection;
 using System.Web.Security;
 using Bikee.Mongo.Tests;
 using Bikee.Security.Domain;
 using FluentAssertions;
 using MongoDB.Bson;
-using MongoDB.Driver.Builders;
 using NUnit.Framework;
 
 namespace Bikee.Security.Mongo.Tests
