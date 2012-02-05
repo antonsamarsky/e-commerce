@@ -11,7 +11,7 @@ namespace Bikee.Mongo.Tests
 		protected MongoServer MongoServer { get; set; }
 		protected MongoDatabase MongoDatabase { get; set; }
 
-		[TestFixtureSetUp]
+		[SetUp]
 		public void InitTestDatabase()
 		{
 			string connectionString = ConfigurationManager.ConnectionStrings[0].ConnectionString;
@@ -30,7 +30,7 @@ namespace Bikee.Mongo.Tests
 			DateTimeSerializationOptions.Defaults = DateTimeSerializationOptions.LocalInstance;
 		}
 
-		[TestFixtureTearDown]
+		[TearDown]
 		public void DropTestDatabase()
 		{
 			this.MongoDatabase.Drop();

@@ -46,6 +46,8 @@ namespace Bikee.Security.Mongo
 				providerUserKey = ObjectId.GenerateNewId();
 			}
 
+			string salt;
+			string saltAnswer = null;
 			var createDate = DateTime.UtcNow;
 			var user = new User
 			{
@@ -55,9 +57,11 @@ namespace Bikee.Security.Mongo
 				DisplayName = username.Trim(),
 				Email = email.Trim(),
 				LowercaseEmail = email.Trim().ToLowerInvariant(),
-				Password = password.Encode(this.PasswordFormat),
+				Password = password.Encode(out salt, this.PasswordFormat),
+				PasswordSalt = salt,
 				PasswordQuestion = this.RequiresQuestionAndAnswer ? passwordQuestion.Trim() : null,
-				PasswordAnswer =  this.RequiresQuestionAndAnswer ? passwordAnswer.Trim().Encode(this.PasswordFormat) : null,
+				PasswordAnswer = this.RequiresQuestionAndAnswer ? passwordAnswer.Trim().Encode(out saltAnswer, this.PasswordFormat) : null,
+				PasswordAnswerSalt = saltAnswer,
 				PasswordFormat = this.PasswordFormat,
 				IsApproved = isApproved,
 				LastPasswordChangedDate = DateTime.MinValue,
@@ -83,9 +87,11 @@ namespace Bikee.Security.Mongo
 				return false;
 			}
 
+			string salt;
 			var user = this.GetUserByName(username.Trim());
 			user.PasswordQuestion = newPasswordQuestion.Trim();
-			user.PasswordAnswer = newPasswordAnswer.Trim().Encode(user.PasswordFormat);
+			user.PasswordAnswer = newPasswordAnswer.Trim().Encode(out salt, user.PasswordFormat);
+			user.PasswordAnswerSalt = salt;
 
 			return true;
 		}
@@ -105,7 +111,7 @@ namespace Bikee.Security.Mongo
 				throw new MembershipPasswordException("The supplied user is locked out.");
 			}
 
-			if (this.RequiresQuestionAndAnswer && !answer.Trim().ComparePassword(user.PasswordAnswer, user.PasswordFormat))
+			if (this.RequiresQuestionAndAnswer && !answer.Trim().VerifyPassword(user.PasswordAnswer, user.PasswordFormat, user.PasswordAnswerSalt))
 			{
 				this.UpdateFailurePasswordAnswerCount(user, false);
 				throw new MembershipPasswordException("Incorrect password answer.");
@@ -127,8 +133,11 @@ namespace Bikee.Security.Mongo
 				throw new MembershipPasswordException("The supplied user name is not found.");
 			}
 
+			string salt;
+
 			// Save new password
-			user.Password = newPassword.Encode(this.PasswordFormat);
+			user.Password = newPassword.Encode(out salt, this.PasswordFormat);
+			user.PasswordSalt = salt;
 			user.PasswordFormat = this.PasswordFormat;
 			user.LastPasswordChangedDate = DateTime.UtcNow;
 			this.Save(user);
@@ -150,7 +159,7 @@ namespace Bikee.Security.Mongo
 				throw new ProviderException(string.Format("User is locked out. user id: {0}", user.Id));
 			}
 
-			if (this.RequiresQuestionAndAnswer && !answer.Trim().ComparePassword(user.PasswordAnswer, user.PasswordFormat))
+			if (this.RequiresQuestionAndAnswer && !answer.Trim().VerifyPassword(user.PasswordAnswer, user.PasswordFormat, user.PasswordAnswerSalt))
 			{
 				this.UpdateFailurePasswordAnswerCount(user, false);
 				throw new MembershipPasswordException("Incorrect password answer.");
@@ -209,10 +218,10 @@ namespace Bikee.Security.Mongo
 				return false;
 			}
 
-			if (password.Trim().ComparePassword(user.Password, user.PasswordFormat))
+			if (!password.VerifyPassword(user.Password, user.PasswordFormat, user.PasswordSalt))
 			{
 				this.UpdateFailurePasswordCount(user, false);
-				throw new MembershipPasswordException("Incorrect password answer.");
+				throw new MembershipPasswordException("Incorrect password.");
 			}
 
 			// User is authenticated. Update last activity and last login dates and failure counts.

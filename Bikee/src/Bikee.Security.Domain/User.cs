@@ -15,9 +15,11 @@ namespace Bikee.Security.Domain
 		public string DisplayName { get; set; }
 		public string Comment { get; set; }
 		public string Password { get; set; }
+		public string PasswordSalt { get; set; }
 		public MembershipPasswordFormat PasswordFormat { get; set; }
 		public string PasswordQuestion { get; set; }
 		public string PasswordAnswer { get; set; }
+		public string PasswordAnswerSalt { get; set; }
 		public bool IsApproved { get; set; }
 		public DateTime LastActivityDate { get; set; }
 		public DateTime LastLoginDate { get; set; }

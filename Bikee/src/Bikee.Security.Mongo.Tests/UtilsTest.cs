@@ -41,10 +41,11 @@ namespace Bikee.Security.Mongo.Tests
 		[TestCase(@"1234567890-=!@#$%^&*()_+qwertyuiop[]asdfghjkl;'\zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:|ZXCVBNM<>?")]
 		public void EncodeDecodeUsingHashingTest(string inputString)
 		{
-			var hash1 = inputString.Encode(MembershipPasswordFormat.Hashed);
+			string salt;
+			var hash1 = inputString.Encode(out salt, MembershipPasswordFormat.Hashed);
 			hash1.Should().NotBe(inputString);
 
-			var hash2 = inputString.Encode(MembershipPasswordFormat.Hashed);
+			var hash2 = inputString.Encode(out salt, MembershipPasswordFormat.Hashed);
 			hash2.Should().NotBe(inputString);
 			hash2.Should().NotBe(hash1);
 
@@ -54,15 +55,15 @@ namespace Bikee.Security.Mongo.Tests
 		[TestCase(@"1234567890-=!@#$%^&*()_+qwertyuiop[]asdfghjkl;'\zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:|ZXCVBNM<>?")]
 		public void EncodeDecodeUsingEncryptionTest(string input)
 		{
-			var encrypted1 = input.Encode(MembershipPasswordFormat.Encrypted);
+			var encrypted1 = input.Encode();
 			encrypted1.Should().NotBe(input);
 
-			var encrypted2 = input.Encode(MembershipPasswordFormat.Encrypted);
+			var encrypted2 = input.Encode();
 			encrypted2.Should().NotBe(input);
 			encrypted2.Should().NotBe(encrypted1);
 
-			var dencrypted1 = encrypted1.Decode(MembershipPasswordFormat.Encrypted);
-			var dencrypted2 = encrypted2.Decode(MembershipPasswordFormat.Encrypted);
+			var dencrypted1 = encrypted1.Decode();
+			var dencrypted2 = encrypted2.Decode();
 			dencrypted1.Should().Be(dencrypted2);
 		}
 
@@ -74,6 +75,19 @@ namespace Bikee.Security.Mongo.Tests
 
 			var dencrypted = encrypted.Decode(MembershipPasswordFormat.Clear);
 			dencrypted.Should().Be(input);
+		}
+
+		[TestCase(@"1234567890-=!@#$%^&*()_+qwertyuiop[]asdfghjkl;'\zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:|ZXCVBNM<>?", MembershipPasswordFormat.Clear)]
+		[TestCase(@"1234567890-=!@#$%^&*()_+qwertyuiop[]asdfghjkl;'\zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:|ZXCVBNM<>?", MembershipPasswordFormat.Encrypted)]
+		[TestCase(@"1234567890-=!@#$%^&*()_+qwertyuiop[]asdfghjkl;'\zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:|ZXCVBNM<>?", MembershipPasswordFormat.Hashed)]
+		public void VerifyPasswordTest(string password, MembershipPasswordFormat format)
+		{
+			string salt;
+			var encoded = password.Encode(out salt, format);
+
+			var result = password.VerifyPassword(encoded, format, salt);
+
+			result.Should().BeTrue();
 		}
 	}
 }

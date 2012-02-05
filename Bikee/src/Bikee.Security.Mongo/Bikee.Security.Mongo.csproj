@@ -54,6 +54,7 @@
     <Compile Include="MongoMembershipProvider.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="SaltedHash.cs" />
     <Compile Include="UserBsonMap.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MongoRoleProvider.cs" />

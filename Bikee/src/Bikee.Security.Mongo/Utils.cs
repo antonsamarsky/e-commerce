@@ -66,15 +66,29 @@ namespace Bikee.Security.Mongo
 		}
 
 		/// <summary>
+		/// Encodes the specified string to be encoded.
+		/// </summary>
+		/// <param name="stringToBeEncoded">The string to be encoded.</param>
+		/// <param name="passwordFormatToUse">The password format to use.</param>
+		/// <returns></returns>
+		public static string Encode(this string stringToBeEncoded, MembershipPasswordFormat passwordFormatToUse = MembershipPasswordFormat.Encrypted)
+		{
+			string salt;
+			return stringToBeEncoded.Encode(out salt, passwordFormatToUse);
+		}
+
+		/// <summary>
 		/// Encodes the password. Encrypts, Hashes, or leaves the password clear based on the PasswordFormat.
 		/// </summary>
 		/// <param name="stringToBeEncoded">The string to be encoded.</param>
 		/// <param name="passwordFormatToUse">The password format to use.</param>
+		/// <param name="salt">The salt.</param>
 		/// <returns>
 		/// The encoded password.
 		/// </returns>
-		public static string Encode(this string stringToBeEncoded, MembershipPasswordFormat passwordFormatToUse)
+		public static string Encode(this string stringToBeEncoded, out string salt, MembershipPasswordFormat passwordFormatToUse = MembershipPasswordFormat.Encrypted)
 		{
+			salt = null;
 			if (string.IsNullOrEmpty(stringToBeEncoded))
 			{
 				return null;
@@ -88,9 +102,9 @@ namespace Bikee.Security.Mongo
 					var unicodeArrayToEncrypt = Encoding.Unicode.GetBytes(stringToBeEncoded);
 					return MachineKey.Encode(unicodeArrayToEncrypt, MachineKeyProtection.All);
 				case MembershipPasswordFormat.Hashed:
-					var unicodeArrayToHash = Encoding.Unicode.GetBytes(stringToBeEncoded);
-					var inArray = HashAlgorithm.Create(Membership.HashAlgorithmType).ComputeHash(unicodeArrayToHash);
-					return Convert.ToBase64String(inArray);
+					var saltedHash = SaltedHash.Create(stringToBeEncoded, HashAlgorithm.Create("SHA512"));
+					salt = saltedHash.Salt;
+					return saltedHash.Hash;
 				default:
 					throw new MembershipPasswordException("Unsupported password format.");
 			}
@@ -102,15 +116,18 @@ namespace Bikee.Security.Mongo
 		/// </summary>
 		/// <param name="stringToBeDecoded">The string to be decoded.</param>
 		/// <param name="passwordFormatToUse">The password format to use.</param>
-		/// <returns>The decoded data.</returns>
-		public static string Decode(this string stringToBeDecoded, MembershipPasswordFormat passwordFormatToUse)
+		/// <returns>
+		/// The decoded data.
+		/// </returns>
+		public static string Decode(this string stringToBeDecoded, MembershipPasswordFormat passwordFormatToUse = MembershipPasswordFormat.Encrypted)
 		{
 			switch (passwordFormatToUse)
 			{
 				case MembershipPasswordFormat.Clear:
 					return stringToBeDecoded;
 				case MembershipPasswordFormat.Encrypted:
-					return Encoding.Unicode.GetString(MachineKey.Decode(stringToBeDecoded, MachineKeyProtection.All));
+					var decoded = MachineKey.Decode(stringToBeDecoded, MachineKeyProtection.All);
+					return Encoding.Unicode.GetString(decoded);
 				case MembershipPasswordFormat.Hashed:
 					throw new MembershipPasswordException("Cannot decode a hashed password.");
 				default:
@@ -123,18 +140,19 @@ namespace Bikee.Security.Mongo
 		/// </summary>
 		/// <param name="password">The password.</param>
 		/// <param name="correctPassword">The correct password.</param>
+		/// <param name="salt">The salt.</param>
 		/// <param name="passwordFormat">The password format.</param>
 		/// <returns></returns>
-		public static bool ComparePassword(this string password, string correctPassword, MembershipPasswordFormat passwordFormat)
+		public static bool VerifyPassword(this string password, string correctPassword, MembershipPasswordFormat passwordFormat = MembershipPasswordFormat.Encrypted, string salt = null)
 		{
 			switch (passwordFormat)
 			{
 				case MembershipPasswordFormat.Encrypted:
-					var correct = Decode(correctPassword, MembershipPasswordFormat.Encrypted);
+					var correct = Decode(correctPassword);
 					return correct == password;
 				case MembershipPasswordFormat.Hashed:
-					var hash = Encode(password, MembershipPasswordFormat.Hashed);
-					return hash == correctPassword;
+					var saltedHash = SaltedHash.Create(salt, correctPassword, HashAlgorithm.Create("SHA512"));
+					return saltedHash.Verify(password);
 				default:
 					return password == correctPassword;
 			}
