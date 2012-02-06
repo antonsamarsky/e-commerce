@@ -85,24 +85,23 @@ namespace Bikee.Security.Mongo.Tests
 			// create the user
 			MembershipCreateStatus status;
 			var user = mongoProvider.CreateUser(username, password, "foo@bar.com", null, null, true, null, out status);
-			Assert.AreEqual(MembershipCreateStatus.Success, status);
+			status.Should().Be(MembershipCreateStatus.Success);
 
 			// verify that the password format was saved
 			var userFromDB = this.MongoDatabase.GetCollection<User>(mongoProvider.UsersCollectionName).FindOneById(BsonValue.Create(user.ProviderUserKey));
-			MembershipPasswordFormat rowFormat = userFromDB.PasswordFormat;
-			Assert.AreEqual(format, rowFormat);
+			userFromDB.PasswordFormat.Should().Be(format);
 
-			//  then attempt to verify the user
-			Assert.IsTrue(provider.ValidateUser(username, password));
+			// then attempt to verify the user
+			provider.ValidateUser(username, password).Should().BeTrue();
 		}
 
 		[Test]
-		public void ChangePasswordTest()
+		public void ChangePasswordValidationTest()
 		{
 			// Create user with hashed password
 			MembershipCreateStatus status;
 			this.provider.CreateUser("foo", "barbar!", "foo@bar.com", null, null, true, null, out status);
-			Assert.AreEqual(MembershipCreateStatus.Success, status);
+			status.Should().Be(MembershipCreateStatus.Success);
 
 			Action act = () => this.provider.ChangePassword("foo", "barbar!", "bar2");
 			act.ShouldThrow<ArgumentException>().And.Message.Should().Be("Password is not valid.");
@@ -115,6 +114,40 @@ namespace Bikee.Security.Mongo.Tests
 
 			this.provider.ChangePassword("foo", "barbar!", "barfoo!").Should().BeTrue();
 			this.provider.ValidateUser("foo", "barfoo!").Should().BeTrue();
+		}
+
+		[Test]
+		public void CreateUserWithErrors()
+		{
+			var mongoProvider = new MongoMembershipProvider();
+			var config = new NameValueCollection
+			{
+				{"connectionStringName", ConfigurationManager.ConnectionStrings[0].Name},
+				{"passwordStrengthRegularExpression", "bar.*"},
+				{"passwordFormat", MembershipPasswordFormat.Hashed.ToString()}
+			};
+			mongoProvider.Initialize("MongoMembershipProvider", config);
+
+			// first try to create a user with a password not long enough
+			MembershipCreateStatus status;
+			MembershipUser user = provider.CreateUser("foo", "xyz","foo@bar.com", null, null, true, null, out status);
+			status.Should().Be(MembershipCreateStatus.InvalidPassword);
+			user.Should().BeNull();
+
+			// now with not enough non-alphas
+			user = provider.CreateUser("foo", "xyz1234", "foo@bar.com", null, null, true, null, out status);
+			status.Should().Be(MembershipCreateStatus.InvalidPassword);
+			user.Should().BeNull();
+
+			// now one that doesn't pass the regex test
+			user = provider.CreateUser("foo", "xyzxyz!", "foo@bar.com", null, null, true, null, out status);
+			status.Should().Be(MembershipCreateStatus.InvalidPassword);
+			user.Should().BeNull();
+
+			// now one that works
+			user = provider.CreateUser("foo", "barbar!","foo@bar.com", null, null, true, null, out status);
+			status.Should().Be(MembershipCreateStatus.Success);
+			user.Should().NotBeNull();
 		}
 	}
 }

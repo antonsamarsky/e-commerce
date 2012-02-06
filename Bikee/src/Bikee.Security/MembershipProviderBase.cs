@@ -262,14 +262,14 @@ namespace Bikee.Security
 		/// <param name="username">The user name for the new user. </param><param name="password">The password for the new user. </param><param name="email">The e-mail address for the new user.</param><param name="passwordQuestion">The password question for the new user.</param><param name="passwordAnswer">The password answer for the new user</param><param name="isApproved">Whether or not the new user is approved to be validated.</param><param name="providerUserKey">The unique identifier from the membership data source for the user.</param><param name="status">A <see cref="T:System.Web.Security.MembershipCreateStatus"/> enumeration value indicating whether the user was created successfully.</param>
 		public override MembershipUser CreateUser(string username, string password, string email, string passwordQuestion, string passwordAnswer, bool isApproved, object providerUserKey, out MembershipCreateStatus status)
 		{
-			var validatedUserName = this.ValidateUserName(username);
+			var validatedUserName = this.ValidateUserName(username, false);
 			if (validatedUserName == null)
 			{
 				status = MembershipCreateStatus.InvalidUserName;
 				return null;
 			}
 
-			var validatedPassword = this.ValidatePassword(password);
+			var validatedPassword = this.ValidatePassword(password, false);
 			if (validatedPassword == null)
 			{
 				status = MembershipCreateStatus.InvalidPassword;
@@ -285,19 +285,19 @@ namespace Bikee.Security
 				return null;
 			}
 
-			if (this.ValidateEmail(email) == null)
+			if (this.ValidateEmail(email, false) == null)
 			{
 				status = MembershipCreateStatus.InvalidEmail;
 				return null;
 			}
 
-			if (this.ValidateQuestion(passwordQuestion) == null)
+			if (this.ValidateQuestion(passwordQuestion, false) == null)
 			{
 				status = MembershipCreateStatus.InvalidQuestion;
 				return null;
 			}
 
-			if (this.ValidateAnswer(passwordAnswer) == null)
+			if (this.ValidateAnswer(passwordAnswer, false) == null)
 			{
 				status = MembershipCreateStatus.InvalidQuestion;
 				return null;
@@ -334,17 +334,8 @@ namespace Bikee.Security
 		/// <param name="username">The user to change the password question and answer for. </param><param name="password">The password for the specified user. </param><param name="newPasswordQuestion">The new password question for the specified user. </param><param name="newPasswordAnswer">The new password answer for the specified user. </param>
 		public override bool ChangePasswordQuestionAndAnswer(string username, string password, string newPasswordQuestion, string newPasswordAnswer)
 		{
-			var validatedPasswordQuestion = this.ValidateQuestion(newPasswordQuestion);
-			if (validatedPasswordQuestion == null)
-			{
-				return false;
-			}
-
-			var validatedPasswordAnswer = this.ValidateAnswer(newPasswordAnswer);
-			if (validatedPasswordAnswer == null)
-			{
-				return false;
-			}
+			this.ValidateQuestion(newPasswordQuestion);
+			this.ValidateAnswer(newPasswordAnswer);
 
 			return this.ValidateUser(username, password);
 		}
@@ -368,15 +359,8 @@ namespace Bikee.Security
 				throw new NotSupportedException("Cannot retrieve hashed passwords.");
 			}
 
-			if (this.ValidateUserName(username) == null)
-			{
-				throw new ProviderException("Invalid user name.");
-			}
-
-			if (this.ValidateAnswer(answer) == null)
-			{
-				throw new ProviderException("Invalid answer.");
-			}
+			this.ValidateUserName(username);
+			this.ValidateAnswer(answer);
 
 			return string.Empty;
 		}
@@ -402,12 +386,7 @@ namespace Bikee.Security
 				throw new MembershipPasswordException("Change password canceled due to new password validation failure.");
 			}
 
-			var validatedPassword = this.ValidatePassword(newPassword);
-			if (validatedPassword == null)
-			{
-				return false;
-			}
-
+			this.ValidatePassword(newPassword);
 			return this.ValidateUser(username, oldPassword);
 		}
 
@@ -445,13 +424,13 @@ namespace Bikee.Security
 		/// <param name="username">The name of the user to validate. </param><param name="password">The password for the specified user. </param>
 		public override bool ValidateUser(string username, string password)
 		{
-			var validatedUserName = this.ValidateUserName(username);
+			var validatedUserName = this.ValidateUserName(username, false);
 			if (validatedUserName == null)
 			{
 				return false;
 			}
 
-			var validatedPassword = this.ValidatePassword(password);
+			var validatedPassword = this.ValidatePassword(password.Trim(), false);
 			if (validatedPassword == null)
 			{
 				return false;
@@ -469,12 +448,7 @@ namespace Bikee.Security
 		/// <param name="userName">The membership user whose lock status you want to clear.</param>
 		public override bool UnlockUser(string userName)
 		{
-			var validatedUserName = this.ValidateUserName(userName);
-			if (validatedUserName == null)
-			{
-				return false;
-			}
-
+			this.ValidateUserName(userName);
 			return true;
 		}
 
@@ -521,11 +495,7 @@ namespace Bikee.Security
 		/// <param name="email">The e-mail address to search for. </param>
 		public override string GetUserNameByEmail(string email)
 		{
-			if (this.ValidateEmail(email) == null)
-			{
-				throw new ArgumentException("email");
-			}
-
+			this.ValidateEmail(email);
 			return null;
 		}
 
@@ -538,10 +508,7 @@ namespace Bikee.Security
 		/// <param name="username">The name of the user to delete.</param><param name="deleteAllRelatedData">true to delete data related to the user from the database; false to leave data related to the user in the database.</param>
 		public override bool DeleteUser(string username, bool deleteAllRelatedData)
 		{
-			if (this.ValidateUserName(username) == null)
-			{
-				return false;
-			}
+			this.ValidateUserName(username);
 
 			return true;
 		}
@@ -579,10 +546,7 @@ namespace Bikee.Security
 		/// <param name="usernameToMatch">The user name to search for.</param><param name="pageIndex">The index of the page of results to return. <paramref name="pageIndex"/> is zero-based.</param><param name="pageSize">The size of the page of results to return.</param><param name="totalRecords">The total number of matched users.</param>
 		public override MembershipUserCollection FindUsersByName(string usernameToMatch, int pageIndex, int pageSize, out int totalRecords)
 		{
-			if (this.ValidateUserName(usernameToMatch) == null)
-			{
-				throw new ArgumentException("usernameToMatch");
-			}
+			this.ValidateUserName(usernameToMatch);
 
 			totalRecords = 0;
 			return new MembershipUserCollection();
@@ -597,11 +561,7 @@ namespace Bikee.Security
 		/// <param name="emailToMatch">The e-mail address to search for.</param><param name="pageIndex">The index of the page of results to return. <paramref name="pageIndex"/> is zero-based.</param><param name="pageSize">The size of the page of results to return.</param><param name="totalRecords">The total number of matched users.</param>
 		public override MembershipUserCollection FindUsersByEmail(string emailToMatch, int pageIndex, int pageSize, out int totalRecords)
 		{
-			if (this.ValidateEmail(emailToMatch) == null)
-			{
-				throw new ArgumentException("emailToMatch");
-			}
-
+			this.ValidateEmail(emailToMatch);
 			totalRecords = 0;
 			return new MembershipUserCollection();
 		}
@@ -610,66 +570,94 @@ namespace Bikee.Security
 
 		#region Validation
 
-		protected virtual string ValidateUserName(string userName)
+		protected virtual string ValidateUserName(string userName, bool throwException = true)
 		{
 			if (string.IsNullOrEmpty(userName))
 			{
-				throw new ArgumentNullException("userName");
+				if (throwException)
+				{
+					throw new ArgumentNullException("userName");
+				}
+
+				return null;
 			}
 
 			var user = userName.Trim();
 
 			if (string.IsNullOrEmpty(user) || this.InvalidUsernameCharacters.Any(user.Contains) || user.Length > MaxUsernameLength)
 			{
-				throw new ArgumentException("User name is not valid.");
+				if (throwException)
+				{
+					throw new ArgumentException("User name is not valid.");
+				}
+				return null;
 			}
 
 			return user;
 		}
 
-		protected virtual string ValidateEmail(string email)
+		protected virtual string ValidateEmail(string email, bool throwException = true)
 		{
 			if (string.IsNullOrEmpty(email))
 			{
-				throw new ArgumentNullException("email");
+				if (throwException)
+				{
+					throw new ArgumentNullException("email");
+				}
+				return null;
 			}
 
 			var mail = email.Trim();
 
 			if (string.IsNullOrEmpty(email) || this.InvalidEmailCharacters.Any(email.Contains) || email.Length > MaxEmailLength)
 			{
-				throw new ArgumentException("Email is not valid.");
+				if (throwException)
+				{
+					throw new ArgumentException("Email is not valid.");
+				}
+				return null;
 			}
 
 			return mail;
 		}
 
-		protected virtual string ValidatePassword(string password)
+		protected virtual string ValidatePassword(string password, bool throwException = true)
 		{
 			if (string.IsNullOrEmpty(password) || string.IsNullOrWhiteSpace(password) || password.Length > MaxPasswordLength || password.Length < this.MinRequiredPasswordLength)
 			{
-				throw new ArgumentException("Password is not valid.");
+				if (throwException)
+				{
+					throw new ArgumentException("Password is not valid.");
+				}
+				return null;
 			}
 
 			if (!string.IsNullOrEmpty(this.PasswordStrengthRegularExpression) && !Regex.IsMatch(password, this.PasswordStrengthRegularExpression))
 			{
-				throw new ArgumentException("Password is not strong enough.");
+				if (throwException)
+				{
+					throw new ArgumentException("Password is not strong enough.");
+				}
+				return null;
 			}
 
 			if (this.MinRequiredNonAlphanumericCharacters > 0)
 			{
 				int numNonAlphaNumericChars = password.Where((t, i) => !char.IsLetterOrDigit(password, i)).Count();
-
 				if (numNonAlphaNumericChars < this.MinRequiredNonAlphanumericCharacters)
 				{
-					throw new ArgumentException("Password does not have required non-alphanumeric characters.");
+					if (throwException)
+					{
+						throw new ArgumentException("Password does not have required non-alphanumeric characters.");
+					}
+					return null;
 				}
 			}
 
 			return password;
 		}
 
-		protected virtual string ValidateQuestion(string question)
+		protected virtual string ValidateQuestion(string question, bool throwException = true)
 		{
 			if (!this.RequiresQuestionAndAnswer)
 			{
@@ -678,20 +666,28 @@ namespace Bikee.Security
 
 			if (string.IsNullOrEmpty(question))
 			{
-				throw new ArgumentNullException("question");
+				if (throwException)
+				{
+					throw new ArgumentNullException("question");
+				}
+				return null;
 			}
 
 			var questionTrimmed = question.Trim();
 
 			if (string.IsNullOrEmpty(questionTrimmed) || questionTrimmed.Length > MaxPasswordQuestionLength)
 			{
-				throw new ArgumentException("Question is not valid.");
+				if (throwException)
+				{
+					throw new ArgumentException("Question is not valid.");
+				}
+				return null;
 			}
 
 			return questionTrimmed;
 		}
 
-		protected virtual string ValidateAnswer(string answer)
+		protected virtual string ValidateAnswer(string answer, bool throwException = true)
 		{
 			if (!this.RequiresQuestionAndAnswer)
 			{
@@ -700,14 +696,22 @@ namespace Bikee.Security
 
 			if (string.IsNullOrEmpty(answer))
 			{
-				throw new ArgumentNullException("answer");
+				if (throwException)
+				{
+					throw new ArgumentNullException("answer");
+				}
+				return null;
 			}
 
 			var answerTrimmed = answer.Trim();
 
 			if (string.IsNullOrEmpty(answerTrimmed) || answerTrimmed.Length > MaxPasswordAnswerLength)
 			{
-				throw new ArgumentException("Answer is not valid.");
+				if (throwException)
+				{
+					throw new ArgumentException("Answer is not valid.");
+				}
+				return null;
 			}
 
 			return answerTrimmed;
