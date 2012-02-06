@@ -543,10 +543,13 @@ namespace Bikee.Security
 		/// <returns>
 		/// A <see cref="T:System.Web.Security.MembershipUserCollection"/> collection that contains a page of <paramref name="pageSize"/><see cref="T:System.Web.Security.MembershipUser"/> objects beginning at the page specified by <paramref name="pageIndex"/>.
 		/// </returns>
-		/// <param name="usernameToMatch">The user name to search for.</param><param name="pageIndex">The index of the page of results to return. <paramref name="pageIndex"/> is zero-based.</param><param name="pageSize">The size of the page of results to return.</param><param name="totalRecords">The total number of matched users.</param>
-		public override MembershipUserCollection FindUsersByName(string usernameToMatch, int pageIndex, int pageSize, out int totalRecords)
+		/// <param name="usernamePatternToMatch">The user name to search for.</param><param name="pageIndex">The index of the page of results to return. <paramref name="pageIndex"/> is zero-based.</param><param name="pageSize">The size of the page of results to return.</param><param name="totalRecords">The total number of matched users.</param>
+		public override MembershipUserCollection FindUsersByName(string usernamePatternToMatch, int pageIndex, int pageSize, out int totalRecords)
 		{
-			this.ValidateUserName(usernameToMatch);
+			if (string.IsNullOrEmpty(usernamePatternToMatch))
+			{
+				throw new ArgumentNullException("usernamePatternToMatch");
+			}
 
 			totalRecords = 0;
 			return new MembershipUserCollection();
@@ -558,10 +561,14 @@ namespace Bikee.Security
 		/// <returns>
 		/// A <see cref="T:System.Web.Security.MembershipUserCollection"/> collection that contains a page of <paramref name="pageSize"/><see cref="T:System.Web.Security.MembershipUser"/> objects beginning at the page specified by <paramref name="pageIndex"/>.
 		/// </returns>
-		/// <param name="emailToMatch">The e-mail address to search for.</param><param name="pageIndex">The index of the page of results to return. <paramref name="pageIndex"/> is zero-based.</param><param name="pageSize">The size of the page of results to return.</param><param name="totalRecords">The total number of matched users.</param>
-		public override MembershipUserCollection FindUsersByEmail(string emailToMatch, int pageIndex, int pageSize, out int totalRecords)
+		/// <param name="emailPatternToMatch">The e-mail address to search for.</param><param name="pageIndex">The index of the page of results to return. <paramref name="pageIndex"/> is zero-based.</param><param name="pageSize">The size of the page of results to return.</param><param name="totalRecords">The total number of matched users.</param>
+		public override MembershipUserCollection FindUsersByEmail(string emailPatternToMatch, int pageIndex, int pageSize, out int totalRecords)
 		{
-			this.ValidateEmail(emailToMatch);
+			if (string.IsNullOrEmpty(emailPatternToMatch))
+			{
+				throw new ArgumentNullException("emailPatternToMatch");
+			}
+
 			totalRecords = 0;
 			return new MembershipUserCollection();
 		}

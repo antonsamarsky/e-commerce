@@ -117,7 +117,7 @@ namespace Bikee.Security.Mongo.Tests
 		}
 
 		[Test]
-		public void CreateUserWithErrors()
+		public void CreateUserWithErrorsTest()
 		{
 			var mongoProvider = new MongoMembershipProvider();
 			var config = new NameValueCollection
@@ -130,7 +130,7 @@ namespace Bikee.Security.Mongo.Tests
 
 			// first try to create a user with a password not long enough
 			MembershipCreateStatus status;
-			MembershipUser user = provider.CreateUser("foo", "xyz","foo@bar.com", null, null, true, null, out status);
+			MembershipUser user = provider.CreateUser("foo", "xyz", "foo@bar.com", null, null, true, null, out status);
 			status.Should().Be(MembershipCreateStatus.InvalidPassword);
 			user.Should().BeNull();
 
@@ -145,9 +145,114 @@ namespace Bikee.Security.Mongo.Tests
 			user.Should().BeNull();
 
 			// now one that works
-			user = provider.CreateUser("foo", "barbar!","foo@bar.com", null, null, true, null, out status);
+			user = provider.CreateUser("foo", "barbar!", "foo@bar.com", null, null, true, null, out status);
 			status.Should().Be(MembershipCreateStatus.Success);
 			user.Should().NotBeNull();
+		}
+
+		[Test]
+		public void CreateUserWithDefaultInvalidCharactersTest()
+		{
+			// Username
+			MembershipCreateStatus status;
+			MembershipUser user = Membership.CreateUser("foo,", "barbar!", "foo@bar.com", null, null, true, null, out status);
+			status.Should().Be(MembershipCreateStatus.InvalidUserName);
+			user.Should().BeNull();
+
+			user = Membership.CreateUser("foo%", "barbar!", "foo@bar.com", null, null, true, null, out status);
+			status.Should().Be(MembershipCreateStatus.InvalidUserName);
+			user.Should().BeNull();
+
+			// Email
+			user = Membership.CreateUser("foo", "barbar!", "foo,@bar.com", null, null, true, null, out status);
+			status.Should().Be(MembershipCreateStatus.InvalidEmail);
+			user.Should().BeNull();
+
+			user = Membership.CreateUser("foo", "barbar!", "foo%@bar.com", null, null, true, null, out status);
+			status.Should().Be(MembershipCreateStatus.InvalidEmail);
+			user.Should().BeNull();
+		}
+
+		[TestCase("()-#", "^/`")]
+		public void CreateUserWithCustomInvalidCharactersTest(string invalidUserChars, string invalidEmailChars)
+		{
+			var mongoProvider = new MongoMembershipProvider();
+			var config = new NameValueCollection
+			{
+				{"connectionStringName", ConfigurationManager.ConnectionStrings[0].Name},
+				{"passwordStrengthRegularExpression", "bar.*"},
+				{"passwordFormat", MembershipPasswordFormat.Hashed.ToString()},
+				{"invalidUsernameCharacters", invalidUserChars}, 
+				{"invalidEmailCharacters", invalidEmailChars}
+
+			};
+			mongoProvider.Initialize("MongoMembershipProvider", config);
+
+			// Username
+			MembershipCreateStatus status;
+			var username = "foo{0}";
+			foreach (var c in invalidUserChars.Split())
+			{
+				MembershipUser user = mongoProvider.CreateUser(string.Format(username, c), "barbar!", "foo@bar.com", null, null, true, null, out status);
+				status.Should().Be(MembershipCreateStatus.InvalidUserName);
+				user.Should().BeNull();
+			}
+
+			// Email
+			var email = "foo{0}@bar.com";
+			foreach (var c in invalidEmailChars.Split())
+			{
+				MembershipUser user = provider.CreateUser("foo", "barbar!", string.Format(email, c), null, null, true, null, out status);
+				status.Should().Be(MembershipCreateStatus.InvalidEmail);
+				user.Should().BeNull();
+			}
+		}
+
+		[Test]
+		public void DeleteUserTest()
+		{
+			MembershipCreateStatus status;
+			this.provider.CreateUser("foo", "barbar!", "foo@bar.com", null, null, true, null, out status);
+			status.Should().Be(MembershipCreateStatus.Success);
+
+			this.provider.DeleteUser("foo", true).Should().BeTrue();
+			this.MongoDatabase.GetCollection<User>(this.provider.UsersCollectionName).Count().Should().Be(0);
+
+			this.provider.CreateUser("foo", "barbar!", "foo@bar.com", null, null, true, null, out status);
+			status.Should().Be(MembershipCreateStatus.Success);
+
+			// in Mongo, all associated data is stored in same document so 
+			// passing true or false to DeleteUser will be the same.
+			provider.DeleteUser("foo", deleteAllRelatedData: true).Should().BeTrue(); ;
+
+			this.MongoDatabase.GetCollection<User>(this.provider.UsersCollectionName).Count().Should().Be(0);
+		}
+
+		[Test]
+		public void FindUsersByNameTest()
+		{
+			MembershipCreateStatus status;
+			this.provider.CreateUser("foo", "barbar!", "foo@bar.com", null, null, true, null, out status);
+			this.provider.CreateUser("foo2", "barbar2!", "foo2@bar.com", null, null, true, null, out status);
+
+			int records;
+			MembershipUserCollection users = this.provider.FindUsersByName("f", 0, 10, out records);
+			records.Should().Be(2);
+			users["foo"].UserName.Should().Be("foo");
+			users["foo2"].UserName.Should().Be("foo2");
+		}
+
+		[Test]
+		public void FindUsersByEmailTest()
+		{
+			MembershipCreateStatus status;
+			this.provider.CreateUser("foo", "barbar!", "foo@bar.com", null, null, true, null, out status);
+			this.provider.CreateUser("foo2", "barbar2!", "some@bar.com", null, null, true, null, out status);
+
+			int records;
+			MembershipUserCollection users = this.provider.FindUsersByEmail("foo", 0, 5, out records);
+			records.Should().Be(1);
+			users["foo"].Email.Should().Be("foo@bar.com");
 		}
 	}
 }

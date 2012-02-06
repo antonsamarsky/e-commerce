@@ -353,56 +353,54 @@ namespace Bikee.Security.Mongo
 			return this.UsersCollection.AsQueryable().Count(u => u.LastActivityDate > compareTime);
 		}
 
-		public override MembershipUserCollection FindUsersByName(string usernameToMatch, int pageIndex, int pageSize, out int totalRecords)
+		public override MembershipUserCollection FindUsersByName(string usernamePatternToMatch, int pageIndex, int pageSize, out int totalRecords)
 		{
-			base.FindUsersByName(usernameToMatch, pageIndex, pageSize, out totalRecords);
+			base.FindUsersByName(usernamePatternToMatch, pageIndex, pageSize, out totalRecords);
 
 			var users = new MembershipUserCollection();
 
-			if (pageIndex <= 0 || pageSize <= 0)
+			if (pageIndex < 0 || pageSize < 0)
 			{
 				totalRecords = 0;
 				return users;
 			}
 
-			var usersToMatchQuery = this.UsersCollection.AsQueryable()
-															.Where(u => u.LowercaseUsername == usernameToMatch.ToLowerInvariant());
+			var query = Query.Matches(MongoHelper.GetElementNameFor<User>(u => u.LowercaseUsername), new BsonRegularExpression(usernamePatternToMatch));
+			var cursor = this.UsersCollection.Find(query).SetSkip(pageIndex * pageSize).SetLimit(pageSize);;
 
-			totalRecords = usersToMatchQuery.Count();
+			foreach (var user in cursor)
+			{
+				users.Add(this.ToMembershipUser(user));
+			}
 
-			usersToMatchQuery
-				.Skip(pageIndex * pageSize)
-				.Take(pageSize)
-				.Select(u => this.ToMembershipUser(u))
-				.ToList()
-				.ForEach(users.Add);
+			// Total count;
+			totalRecords = (int)this.UsersCollection.Find(query).Count();
 
 			return users;
 		}
 
-		public override MembershipUserCollection FindUsersByEmail(string emailToMatch, int pageIndex, int pageSize, out int totalRecords)
+		public override MembershipUserCollection FindUsersByEmail(string emailPatternToMatch, int pageIndex, int pageSize, out int totalRecords)
 		{
-			base.FindUsersByEmail(emailToMatch, pageIndex, pageSize, out totalRecords);
+			base.FindUsersByEmail(emailPatternToMatch, pageIndex, pageSize, out totalRecords);
 
 			var users = new MembershipUserCollection();
 
-			if (pageIndex <= 0 || pageSize <= 0)
+			if (pageIndex < 0 || pageSize < 0)
 			{
 				totalRecords = 0;
 				return users;
 			}
 
-			var usersToMatchQuery = this.UsersCollection.AsQueryable()
-															.Where(u => u.LowercaseEmail == emailToMatch.ToLowerInvariant());
+			var query = Query.Matches(MongoHelper.GetElementNameFor<User>(u => u.LowercaseEmail), new BsonRegularExpression(emailPatternToMatch));
+			var cursor = this.UsersCollection.Find(query).SetSkip(pageIndex * pageSize).SetLimit(pageSize); ;
 
-			totalRecords = usersToMatchQuery.Count();
+			foreach (var user in cursor)
+			{
+				users.Add(this.ToMembershipUser(user));
+			}
 
-			usersToMatchQuery
-				.Skip(pageIndex * pageSize)
-				.Take(pageSize)
-				.Select(u => this.ToMembershipUser(u))
-				.ToList()
-				.ForEach(users.Add);
+			// Total count;
+			totalRecords = (int)this.UsersCollection.Find(query).Count();
 
 			return users;
 		}
