@@ -15,3 +15,7 @@ Bikee/src/Bikee.Bson/obj
 Bikee/src/Bikee.Mongo.Tests/bin
 Bikee/src/Bikee.Mongo.Tests/obj
 Bikee/TestResults
+
+*.ncrunchsolution
+*.crunchsolution.cache
+*.ncrunchproject

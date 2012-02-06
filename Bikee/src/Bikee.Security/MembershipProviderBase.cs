@@ -402,6 +402,12 @@ namespace Bikee.Security
 				throw new MembershipPasswordException("Change password canceled due to new password validation failure.");
 			}
 
+			var validatedPassword = this.ValidatePassword(newPassword);
+			if (validatedPassword == null)
+			{
+				return false;
+			}
+
 			return this.ValidateUser(username, oldPassword);
 		}
 
@@ -608,14 +614,14 @@ namespace Bikee.Security
 		{
 			if (string.IsNullOrEmpty(userName))
 			{
-				return null;
+				throw new ArgumentNullException("userName");
 			}
 
 			var user = userName.Trim();
 
 			if (string.IsNullOrEmpty(user) || this.InvalidUsernameCharacters.Any(user.Contains) || user.Length > MaxUsernameLength)
 			{
-				return null;
+				throw new ArgumentException("User name is not valid.");
 			}
 
 			return user;
@@ -625,14 +631,14 @@ namespace Bikee.Security
 		{
 			if (string.IsNullOrEmpty(email))
 			{
-				return null;
+				throw new ArgumentNullException("email");
 			}
 
 			var mail = email.Trim();
 
 			if (string.IsNullOrEmpty(email) || this.InvalidEmailCharacters.Any(email.Contains) || email.Length > MaxEmailLength)
 			{
-				return null;
+				throw new ArgumentException("Email is not valid.");
 			}
 
 			return mail;
@@ -642,12 +648,12 @@ namespace Bikee.Security
 		{
 			if (string.IsNullOrEmpty(password) || string.IsNullOrWhiteSpace(password) || password.Length > MaxPasswordLength || password.Length < this.MinRequiredPasswordLength)
 			{
-				return null;
+				throw new ArgumentException("Password is not valid.");
 			}
 
 			if (!string.IsNullOrEmpty(this.PasswordStrengthRegularExpression) && !Regex.IsMatch(password, this.PasswordStrengthRegularExpression))
 			{
-				return null;
+				throw new ArgumentException("Password is not strong enough.");
 			}
 
 			if (this.MinRequiredNonAlphanumericCharacters > 0)
@@ -656,7 +662,7 @@ namespace Bikee.Security
 
 				if (numNonAlphaNumericChars < this.MinRequiredNonAlphanumericCharacters)
 				{
-					return null;
+					throw new ArgumentException("Password does not have required non-alphanumeric characters.");
 				}
 			}
 
@@ -672,14 +678,14 @@ namespace Bikee.Security
 
 			if (string.IsNullOrEmpty(question))
 			{
-				return null;
+				throw new ArgumentNullException("question");
 			}
 
 			var questionTrimmed = question.Trim();
 
 			if (string.IsNullOrEmpty(questionTrimmed) || questionTrimmed.Length > MaxPasswordQuestionLength)
 			{
-				return null;
+				throw new ArgumentException("Question is not valid.");
 			}
 
 			return questionTrimmed;
@@ -694,14 +700,14 @@ namespace Bikee.Security
 
 			if (string.IsNullOrEmpty(answer))
 			{
-				return null;
+				throw new ArgumentNullException("answer");
 			}
 
 			var answerTrimmed = answer.Trim();
 
 			if (string.IsNullOrEmpty(answerTrimmed) || answerTrimmed.Length > MaxPasswordAnswerLength)
 			{
-				return null;
+				throw new ArgumentException("Answer is not valid.");
 			}
 
 			return answerTrimmed;

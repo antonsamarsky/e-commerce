@@ -27,7 +27,7 @@ namespace Bikee.Security.Mongo.Tests
 			this.provider.UsersCollection.Should().NotBeNull();
 		}
 
-		[TestCase("User name", "password_", "email@mail.com", true)]
+		[TestCase("User name", "barbar! _asvada", "email@mail.com", true)]
 		public void CreateUserDefaultTest(string userName, string password, string email, bool isApproved)
 		{
 			MembershipCreateStatus status;
@@ -94,6 +94,27 @@ namespace Bikee.Security.Mongo.Tests
 
 			//  then attempt to verify the user
 			Assert.IsTrue(provider.ValidateUser(username, password));
+		}
+
+		[Test]
+		public void ChangePasswordTest()
+		{
+			// Create user with hashed password
+			MembershipCreateStatus status;
+			this.provider.CreateUser("foo", "barbar!", "foo@bar.com", null, null, true, null, out status);
+			Assert.AreEqual(MembershipCreateStatus.Success, status);
+
+			Action act = () => this.provider.ChangePassword("foo", "barbar!", "bar2");
+			act.ShouldThrow<ArgumentException>().And.Message.Should().Be("Password is not valid.");
+
+			Action act2 = () => this.provider.ChangePassword("foo", "barbar!", "barbar2");
+			act2.ShouldThrow<ArgumentException>().And.Message.Should().Be("Password does not have required non-alphanumeric characters.");
+
+			Action act3 = () => this.provider.ChangePassword("foo", "barbar!", "zzzxxx!");
+			act3.ShouldThrow<ArgumentException>().And.Message.Should().Be("Password is not strong enough.");
+
+			this.provider.ChangePassword("foo", "barbar!", "barfoo!").Should().BeTrue();
+			this.provider.ValidateUser("foo", "barfoo!").Should().BeTrue();
 		}
 	}
 }
