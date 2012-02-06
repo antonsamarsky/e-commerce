@@ -28,7 +28,8 @@ namespace Bikee.Security.Mongo
 			this.UsersCollectionName = SecurityHelper.GetConfigValue(config["usersCollectionName"], "users");
 
 			this.RegisterMapping();
-			this.InitDatabse();
+			this.InitDatabase();
+			this.EnsureIndexes();
 		}
 
 		public override MembershipUser CreateUser(string username, string password, string email, string passwordQuestion, string passwordAnswer, bool isApproved, object providerUserKey, out MembershipCreateStatus status)
@@ -411,12 +412,18 @@ namespace Bikee.Security.Mongo
 			new UserBsonMap();
 		}
 
-		protected virtual void InitDatabse()
+		protected virtual void InitDatabase()
 		{
 			var database = MongoDatabase.Create(this.ConnectionString);
 			this.UsersCollection = database.GetCollection<User>(this.UsersCollectionName);
 
 			DateTimeSerializationOptions.Defaults = DateTimeSerializationOptions.LocalInstance;
+		}
+
+		protected virtual void EnsureIndexes()
+		{
+			this.UsersCollection.EnsureIndex(MongoHelper.GetElementNameFor<User>(u => u.LowercaseUsername));
+			this.UsersCollection.EnsureIndex(MongoHelper.GetElementNameFor<User>(u => u.LowercaseEmail));
 		}
 
 		protected virtual User GetUserByMail(string email)
