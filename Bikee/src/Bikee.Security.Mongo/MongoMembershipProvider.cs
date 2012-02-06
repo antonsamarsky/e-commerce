@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Specialized;
 using System.Configuration.Provider;
-using System.Linq;
 using System.Web.Security;
-using FluentMongo.Linq;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Options;
@@ -334,12 +332,12 @@ namespace Bikee.Security.Mongo
 				return users;
 			}
 
-			this.UsersCollection.AsQueryable()
-				.Skip(pageIndex * pageSize)
-				.Take(pageSize)
-				.Select(u => this.ToMembershipUser(u))
-				.ToList()
-				.ForEach(users.Add);
+			var cursor = this.UsersCollection.FindAll().SetSkip(pageIndex * pageSize).SetLimit(pageSize);
+
+			foreach (var user in cursor)
+			{
+				users.Add(this.ToMembershipUser(user));
+			}
 
 			return users;
 		}
@@ -350,7 +348,8 @@ namespace Bikee.Security.Mongo
 			TimeSpan onlineSpan = new TimeSpan(0, Membership.UserIsOnlineTimeWindow, 0);
 			DateTime compareTime = DateTime.UtcNow.Subtract(onlineSpan);
 
-			return this.UsersCollection.AsQueryable().Count(u => u.LastActivityDate > compareTime);
+			var query = Query.GT(MongoHelper.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), compareTime);
+			return (int)this.UsersCollection.Find(query).Count();
 		}
 
 		public override MembershipUserCollection FindUsersByName(string usernamePatternToMatch, int pageIndex, int pageSize, out int totalRecords)
@@ -366,7 +365,7 @@ namespace Bikee.Security.Mongo
 			}
 
 			var query = Query.Matches(MongoHelper.GetElementNameFor<User>(u => u.LowercaseUsername), new BsonRegularExpression(usernamePatternToMatch));
-			var cursor = this.UsersCollection.Find(query).SetSkip(pageIndex * pageSize).SetLimit(pageSize);;
+			var cursor = this.UsersCollection.Find(query).SetSkip(pageIndex * pageSize).SetLimit(pageSize);
 
 			foreach (var user in cursor)
 			{
