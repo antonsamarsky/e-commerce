@@ -51,5 +51,20 @@ namespace Bikee.Security.Mongo
 
 			return memberMap.ElementName;
 		}
+
+		public static string GenerateCollectionName(string application, string collection)
+		{
+			if (string.IsNullOrWhiteSpace(application))
+			{
+				return collection;
+			}
+
+			if (application.EndsWith("/"))
+			{
+				return application + collection;
+			}
+
+			return string.Format("{0}/{1}", application, collection);
+		}
 	}
 }

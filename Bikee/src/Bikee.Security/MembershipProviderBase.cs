@@ -26,7 +26,6 @@ namespace Bikee.Security
 
 		#region Fields
 
-		private string applicationName;
 		private int maxInvalidPasswordAttempts;
 		private int passwordAttemptWindow;
 		private int minRequiredNonAlphanumericCharacters;
@@ -82,18 +81,6 @@ namespace Bikee.Security
 		public override bool RequiresQuestionAndAnswer
 		{
 			get { return this.requiresQuestionAndAnswer; }
-		}
-
-		/// <summary>
-		/// The name of the application using the custom membership provider.
-		/// </summary>
-		/// <returns>
-		/// The name of the application using the custom membership provider.
-		/// </returns>
-		public override string ApplicationName
-		{
-			get { return this.applicationName; }
-			set { this.applicationName = value; }
 		}
 
 		/// <summary>
@@ -202,7 +189,6 @@ namespace Bikee.Security
 
 			base.Initialize(name, config);
 
-			this.applicationName = SecurityHelper.GetConfigValue(config["applicationName"], System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath);
 			this.maxInvalidPasswordAttempts = SecurityHelper.GetConfigValue(config["maxInvalidPasswordAttempts"], 5);
 			this.passwordAttemptWindow = SecurityHelper.GetConfigValue(config["passwordAttemptWindow"], 10);
 			this.minRequiredNonAlphanumericCharacters = SecurityHelper.GetConfigValue(config["minRequiredNonAlphanumericCharacters"], 1);
@@ -299,7 +285,7 @@ namespace Bikee.Security
 
 			if (this.ValidateAnswer(passwordAnswer, false) == null)
 			{
-				status = MembershipCreateStatus.InvalidQuestion;
+				status = MembershipCreateStatus.InvalidAnswer;
 				return null;
 			}
 
@@ -424,14 +410,12 @@ namespace Bikee.Security
 		/// <param name="username">The name of the user to validate. </param><param name="password">The password for the specified user. </param>
 		public override bool ValidateUser(string username, string password)
 		{
-			var validatedUserName = this.ValidateUserName(username, false);
-			if (validatedUserName == null)
+			if (string.IsNullOrEmpty(username))
 			{
 				return false;
 			}
 
-			var validatedPassword = this.ValidatePassword(password.Trim(), false);
-			if (validatedPassword == null)
+			if (string.IsNullOrEmpty(password))
 			{
 				return false;
 			}

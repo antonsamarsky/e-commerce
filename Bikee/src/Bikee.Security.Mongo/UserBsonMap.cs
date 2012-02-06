@@ -6,7 +6,12 @@ namespace Bikee.Security.Mongo
 	{
 		public UserBsonMap()
 		{
-			this.Map = cm => cm.GetMemberMap(o => o.Roles).SetIgnoreIfNull(true);
+			this.Map = cm =>
+			{
+				cm.SetIsRootClass(true);
+				cm.SetIgnoreExtraElements(true);
+				cm.GetMemberMap(o => o.Roles).SetIgnoreIfNull(true);
+			};
 		}
 	}
 }

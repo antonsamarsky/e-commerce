@@ -13,17 +13,33 @@ namespace Bikee.Security.Mongo
 	public class MongoMembershipProvider : MembershipProviderBase
 	{
 		private const int NewPasswordLength = 8;
+		private string applicationName;
+		private string collectionSuffix;
+		private MongoDatabase database;
 
 		public string UsersCollectionName { get; private set; }
 
 		public MongoCollection<User> UsersCollection { get; set; }
 
+		public override string ApplicationName
+		{
+			get { return this.applicationName; }
+			set
+			{
+				this.applicationName = value;
+				this.UsersCollectionName = MongoHelper.GenerateCollectionName(this.applicationName, this.collectionSuffix);
+				this.UsersCollection = this.database.GetCollection<User>(this.UsersCollectionName);
+			}
+		}
+
 		public override void Initialize(string name, NameValueCollection config)
 		{
 			base.Initialize(name, config);
 
+			this.applicationName = SecurityHelper.GetConfigValue(config["applicationName"], System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath);
+
 			// MongoDB specific setting
-			this.UsersCollectionName = SecurityHelper.GetConfigValue(config["usersCollectionName"], "users");
+			this.collectionSuffix = SecurityHelper.GetConfigValue(config["collectionSuffix"], "users");
 
 			this.RegisterMapping();
 			this.InitDatabase();
@@ -90,6 +106,7 @@ namespace Bikee.Security.Mongo
 			user.PasswordQuestion = newPasswordQuestion.Trim();
 			user.PasswordAnswer = newPasswordAnswer.Trim().Encode(out salt, user.PasswordFormat);
 			user.PasswordAnswerSalt = salt;
+			this.Save(user);
 
 			return true;
 		}
@@ -125,7 +142,7 @@ namespace Bikee.Security.Mongo
 				return false;
 			}
 
-			var user = this.GetUserByName(username.Trim());
+			var user = this.GetUserByName(username.Trim(), true);
 			if (user == null)
 			{
 				throw new MembershipPasswordException("The supplied user name is not found.");
@@ -147,7 +164,7 @@ namespace Bikee.Security.Mongo
 		{
 			base.ResetPassword(username, answer);
 
-			var user = this.GetUserByName(username);
+			var user = this.GetUserByName(username, true);
 			if (user == null)
 			{
 				throw new ProviderException("User was not found.");
@@ -188,6 +205,9 @@ namespace Bikee.Security.Mongo
 
 		public override void UpdateUser(MembershipUser user)
 		{
+			this.ValidateUserName(user.UserName);
+			this.ValidateEmail(user.UserName);
+
 			var userFromDB = this.GetUserByName(user.UserName);
 			if (userFromDB == null)
 			{
@@ -219,7 +239,8 @@ namespace Bikee.Security.Mongo
 			if (!password.VerifyPassword(user.Password, user.PasswordFormat, user.PasswordSalt))
 			{
 				this.UpdateFailurePasswordCount(user, false);
-				throw new MembershipPasswordException("Incorrect password.");
+				return false;
+				//throw new MembershipPasswordException("Incorrect password.");
 			}
 
 			// User is authenticated. Update last activity and last login dates and failure counts.
@@ -271,31 +292,33 @@ namespace Bikee.Security.Mongo
 			}
 
 			var query = Query.EQ(MongoHelper.GetElementNameFor<User>(u => u.Id), id);
-			var update = Update.Set(MongoHelper.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
 
-			var result = this.UsersCollection.FindAndModify(query, SortBy.Null, update, true);
 
-			if (!result.Ok)
+			if (userIsOnline)
 			{
-				this.HandleExceptionAndThrow(new ProviderException(result.ErrorMessage));
+				var update = Update.Set(MongoHelper.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
+				var cursor = this.UsersCollection.FindAndModify(query, SortBy.Null, update, true);
+
+				if (!cursor.Ok)
+				{
+					this.HandleExceptionAndThrow(new ProviderException(cursor.ErrorMessage));
+				}
+
+				var document = cursor.ModifiedDocument;
+				if (document == null) return null;
+				var user = BsonSerializer.Deserialize<User>(document);
+				return this.ToMembershipUser(user);
 			}
 
-			var document = result.ModifiedDocument;
-			if (document == null)
-			{
-				return null;
-			}
-
-			var user = BsonSerializer.Deserialize<User>(document);
-
-			return this.ToMembershipUser(user);
+			var result = this.UsersCollection.FindOne(query);
+			return result == null ? null : this.ToMembershipUser(result);
 		}
 
 		public override MembershipUser GetUser(string username, bool userIsOnline)
 		{
 			base.GetUser(username, userIsOnline);
 
-			var user = this.GetUserByName(username);
+			var user = this.GetUserByName(username, userIsOnline);
 
 			return this.ToMembershipUser(user);
 		}
@@ -327,7 +350,7 @@ namespace Bikee.Security.Mongo
 
 			// execute second query to get total count
 			totalRecords = (int)this.UsersCollection.Count();
-			if (totalRecords == 0 || pageIndex <= 0 || pageSize <= 0)
+			if (totalRecords == 0 || pageIndex < 0 || pageSize < 0)
 			{
 				return users;
 			}
@@ -391,7 +414,7 @@ namespace Bikee.Security.Mongo
 			}
 
 			var query = Query.Matches(MongoHelper.GetElementNameFor<User>(u => u.LowercaseEmail), new BsonRegularExpression(emailPatternToMatch));
-			var cursor = this.UsersCollection.Find(query).SetSkip(pageIndex * pageSize).SetLimit(pageSize); ;
+			var cursor = this.UsersCollection.Find(query).SetSkip(pageIndex * pageSize).SetLimit(pageSize);
 
 			foreach (var user in cursor)
 			{
@@ -411,8 +434,9 @@ namespace Bikee.Security.Mongo
 
 		protected virtual void InitDatabase()
 		{
-			var database = MongoDatabase.Create(this.ConnectionString);
-			this.UsersCollection = database.GetCollection<User>(this.UsersCollectionName);
+			this.database = MongoDatabase.Create(this.ConnectionString);
+			this.UsersCollectionName = MongoHelper.GenerateCollectionName(this.applicationName, this.collectionSuffix);
+			this.UsersCollection = this.database.GetCollection<User>(this.UsersCollectionName);
 
 			DateTimeSerializationOptions.Defaults = DateTimeSerializationOptions.LocalInstance;
 		}
@@ -423,7 +447,7 @@ namespace Bikee.Security.Mongo
 			this.UsersCollection.EnsureIndex(MongoHelper.GetElementNameFor<User>(u => u.LowercaseEmail));
 		}
 
-		protected virtual User GetUserByMail(string email)
+		protected virtual User GetUserByMail(string email, bool userIsOnline = false)
 		{
 			if (string.IsNullOrEmpty(email))
 			{
@@ -432,20 +456,25 @@ namespace Bikee.Security.Mongo
 			}
 
 			var query = Query.EQ(MongoHelper.GetElementNameFor<User>(u => u.LowercaseEmail), email.ToLowerInvariant());
-			var update = Update.Set(MongoHelper.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
 
-			var result = this.UsersCollection.FindAndModify(query, SortBy.Null, update, true);
-
-			if (!result.Ok)
+			if (userIsOnline)
 			{
-				this.HandleExceptionAndThrow(new ProviderException(result.ErrorMessage));
+				var update = Update.Set(MongoHelper.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
+				var cursor = this.UsersCollection.FindAndModify(query, SortBy.Null, update, true);
+
+				if (!cursor.Ok)
+				{
+					this.HandleExceptionAndThrow(new ProviderException(cursor.ErrorMessage));
+				}
+
+				var document = cursor.ModifiedDocument;
+				return document == null ? null : BsonSerializer.Deserialize<User>(document);
 			}
 
-			var document = result.ModifiedDocument;
-			return document == null ? null : BsonSerializer.Deserialize<User>(document);
+			return this.UsersCollection.FindOne(query);
 		}
 
-		protected virtual User GetUserByName(string userName)
+		protected virtual User GetUserByName(string userName, bool userIsOnline = false)
 		{
 			if (string.IsNullOrEmpty(userName))
 			{
@@ -454,17 +483,21 @@ namespace Bikee.Security.Mongo
 			}
 
 			var query = Query.EQ(MongoHelper.GetElementNameFor<User>(u => u.LowercaseUsername), userName.ToLowerInvariant());
-			var update = Update.Set(MongoHelper.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
 
-			var result = this.UsersCollection.FindAndModify(query, SortBy.Null, update, true);
-
-			if (!result.Ok)
+			if (userIsOnline)
 			{
-				this.HandleExceptionAndThrow(new ProviderException(result.ErrorMessage));
+				var update = Update.Set(MongoHelper.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
+				var cursor = this.UsersCollection.FindAndModify(query, SortBy.Null, update, true);
+
+				if (!cursor.Ok)
+				{
+					this.HandleExceptionAndThrow(new ProviderException(cursor.ErrorMessage));
+				}
+				var document = cursor.ModifiedDocument;
+				return document == null ? null : BsonSerializer.Deserialize<User>(document);
 			}
 
-			var document = result.ModifiedDocument;
-			return document == null ? null : BsonSerializer.Deserialize<User>(document);
+			return this.UsersCollection.FindOne(query);
 		}
 
 		protected virtual void Save<T>(T user) where T : User
