@@ -742,7 +742,7 @@ namespace Bikee.Security.Mongo.Tests
 			Assert.IsNull(username);
 		}
 
-		[Test]
+		[Test, Ignore]
 		public void UserUpdateDoesNotWipeOutIgnoredFieldsTest()
 		{
 			if (!BsonClassMap.IsClassMapRegistered(typeof(Profile)))
