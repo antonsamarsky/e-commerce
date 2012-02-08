@@ -1,17 +1,26 @@
-﻿using Bikee.Bson;
+﻿using System.ComponentModel.Composition;
+using Bikee.Bson;
+using MongoDB.Bson.Serialization;
 
 namespace Bikee.Security.Mongo
 {
-	public class UserBsonMap : BsonMap<User>
+	[Export(typeof(IBsonMap))]
+	public class UserBsonMap : IBsonMap
 	{
-		public UserBsonMap()
+		public void Register()
 		{
-			this.Map = cm =>
+			if (BsonClassMap.IsClassMapRegistered(typeof(User)))
 			{
-				cm.SetIsRootClass(true);
-				cm.SetIgnoreExtraElements(true);
-				cm.GetMemberMap(o => o.Roles).SetIgnoreIfNull(true);
-			};
+				return;
+			}
+
+			BsonClassMap.RegisterClassMap<User>(map =>
+			{
+				map.AutoMap();
+				map.SetIsRootClass(true);
+				map.SetIgnoreExtraElements(true);
+				map.GetMemberMap(o => o.Roles).SetIgnoreIfNull(true);
+			});
 		}
 	}
 }

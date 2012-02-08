@@ -6,7 +6,6 @@ using Bikee.Mongo.Tests;
 using FluentAssertions;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
-using MongoDB.Driver.Builders;
 using NUnit.Framework;
 
 namespace Bikee.Security.Mongo.Tests
@@ -77,24 +76,23 @@ namespace Bikee.Security.Mongo.Tests
 			var config = new NameValueCollection
 			{
 				{"connectionStringName", ConfigurationManager.ConnectionStrings[0].Name},
-				{"passwordStrengthRegularExpression", "bar.*"},
 				{"passwordFormat", format.ToString()}
 			};
 			mongoProvider.Initialize("MongoMembershipProvider", config);
-			var username = "foo";
-			var password = "barbar! _asvadasdfasf4r2423rfewQ!@$!@%&%^879s";
-
+		
 			// create the user
 			MembershipCreateStatus status;
-			var user = mongoProvider.CreateUser(username, password, "foo@bar.com", null, null, true, null, out status);
+			var user = mongoProvider.CreateUser("foo", "barbar!", "foo@bar.com", null, null, true, null, out status);
 			status.Should().Be(MembershipCreateStatus.Success);
+			user.Should().NotBeNull();
 
 			// verify that the password format was saved
-			var userFromDB = this.MongoDatabase.GetCollection<User>(mongoProvider.UsersCollectionName).FindOneById(BsonValue.Create(user.ProviderUserKey));
+			var collection = this.MongoDatabase.GetCollection<User>(mongoProvider.UsersCollectionName);
+			var userFromDB = collection.FindOneById(BsonValue.Create(user.ProviderUserKey));
 			userFromDB.PasswordFormat.Should().Be(format);
 
 			// then attempt to verify the user
-			provider.ValidateUser(username, password).Should().BeTrue();
+			mongoProvider.ValidateUser("foo", "barbar!").Should().BeTrue();
 		}
 
 		[Test]
@@ -752,59 +750,46 @@ namespace Bikee.Security.Mongo.Tests
 				BsonClassMap.RegisterClassMap<Profile>();
 			}
 
-			var mongoProvider = new MongoMembershipProvider();
-
-			var config = new NameValueCollection
-			{
-				{"connectionStringName", ConfigurationManager.ConnectionStrings[0].Name},
-				{"requiresUniqueEmail", "false"},
-				{"passwordFormat", "Clear"},
-				{"enablePasswordRetrieval", "true"},
-				{"requiresQuestionAndAnswer", "true"}
-			};
-			mongoProvider.Initialize(null, config);
-
 			MembershipCreateStatus status;
-			mongoProvider.CreateUser("foo", "bar!bar", "foo@bar.com", "question", "answer", true, true, out status);
+			Membership.CreateUser("foo", "bar!bar", "foo@bar.com", null, null, true, out status);
 			status.Should().Be(MembershipCreateStatus.Success);
 
 			// ensure user created correctly
-			MembershipUser user = mongoProvider.GetUser("foo", false);
-			Assert.AreEqual("question", user.PasswordQuestion);
+			var user = Membership.GetUser("foo");
+			Assert.AreEqual("foo@bar.com", user.Email);
 
 			// save Profile over User
-			var mongoProvider2 = (MongoMembershipProvider)Membership.Provider;
-			var profiles = mongoProvider2.UsersCollection.Database.GetCollection<Profile>(mongoProvider.UsersCollectionName);
+			var profiles = ((MongoMembershipProvider)Membership.Provider).UsersCollection.Database.GetCollection<Profile>(this.provider.UsersCollectionName);
 
-			var profile = profiles.FindOne(Query.EQ("LowercaseUsername", "foo"));
+			var profile = profiles.FindOne();
 			profile.FirstName = "Neo";
 
 			profiles.Save(profile);
 
 			// ensure profile saved correctly
-			profile = profiles.FindOne(Query.EQ("LowercaseUsername", "foo"));
+			profile = profiles.FindOne();
 			Assert.AreEqual("Neo", profile.FirstName);
-			Assert.AreEqual("question", profile.PasswordQuestion);
+			Assert.AreEqual("foo@bar.com", profile.Email);
 
 			// validate User
-			var valid = mongoProvider.ValidateUser("foo", "bar!bar");
+			var valid = Membership.ValidateUser("foo", "bar!bar");
 			Assert.AreEqual(true, valid);
 
 			// ensure profile fields still in database
-			profile = profiles.FindOne(Query.EQ("LowercaseUsername", "foo"));
+			profile = profiles.FindOne();
 			Assert.AreEqual("Neo", profile.FirstName);
-			Assert.AreEqual("question", profile.PasswordQuestion);
+			Assert.AreEqual("foo@bar.com", profile.Email);
 
 			// update User
 			user.ChangePassword("bar!bar", "foo!foo");
 
 			// ensure profile fields still in database
-			profile = profiles.FindOne(Query.EQ("LowercaseUsername", "foo"));
+			profile = profiles.FindOne();
 			Assert.AreEqual("Neo", profile.FirstName);
-			Assert.AreEqual("question", profile.PasswordQuestion);
+			Assert.AreEqual("foo@bar.com", profile.Email);
 		}
 
-		private class Profile : User
+		public class Profile : User
 		{
 			public string FirstName { get; set; }
 		}

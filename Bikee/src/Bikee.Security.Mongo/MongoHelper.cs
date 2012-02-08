@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 using MongoDB.Bson.Serialization;
@@ -54,17 +55,7 @@ namespace Bikee.Security.Mongo
 
 		public static string GenerateCollectionName(string application, string collection)
 		{
-			if (string.IsNullOrWhiteSpace(application))
-			{
-				return collection;
-			}
-
-			if (application.EndsWith("/"))
-			{
-				return application + collection;
-			}
-
-			return string.Format("{0}/{1}", application, collection);
+			return string.IsNullOrEmpty(application) ? collection : Path.Combine(application, collection);
 		}
 	}
 }

@@ -27,7 +27,7 @@ namespace Bikee.Security.Mongo
 			set
 			{
 				this.applicationName = value;
-				this.UsersCollectionName = MongoHelper.GenerateCollectionName(this.applicationName, this.collectionSuffix);
+				this.UsersCollectionName = MongoHelper.GenerateCollectionName(value, this.collectionSuffix);
 				this.UsersCollection = this.database.GetCollection<User>(this.UsersCollectionName);
 			}
 		}
@@ -41,7 +41,6 @@ namespace Bikee.Security.Mongo
 			// MongoDB specific setting
 			this.collectionSuffix = SecurityHelper.GetConfigValue(config["collectionSuffix"], "users");
 
-			this.RegisterMapping();
 			this.InitDatabase();
 			this.EnsureIndexes();
 		}
@@ -427,16 +426,12 @@ namespace Bikee.Security.Mongo
 			return users;
 		}
 
-		protected virtual void RegisterMapping()
-		{
-			new UserBsonMap();
-		}
-
 		protected virtual void InitDatabase()
 		{
 			this.database = MongoDatabase.Create(this.ConnectionString);
-			this.UsersCollectionName = MongoHelper.GenerateCollectionName(this.applicationName, this.collectionSuffix);
-			this.UsersCollection = this.database.GetCollection<User>(this.UsersCollectionName);
+
+			// This will set UsersCollectionName and init UsersCollection
+			this.ApplicationName = this.applicationName;
 
 			DateTimeSerializationOptions.Defaults = DateTimeSerializationOptions.LocalInstance;
 		}

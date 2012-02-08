@@ -1,4 +1,5 @@
 ﻿using System.Configuration;
+using Bikee.Bson;
 using MongoDB.Bson.Serialization.Options;
 using MongoDB.Driver;
 using NUnit.Framework;
@@ -28,6 +29,9 @@ namespace Bikee.Mongo.Tests
 			this.MongoDatabase = this.MongoServer.GetDatabase(databaseName);
 
 			DateTimeSerializationOptions.Defaults = DateTimeSerializationOptions.LocalInstance;
+
+			// Compose all maps.
+			BsonMapRegistrator.Compose();
 		}
 
 		[TearDown]

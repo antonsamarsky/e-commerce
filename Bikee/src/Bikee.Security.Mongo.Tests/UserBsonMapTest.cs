@@ -45,9 +45,6 @@ namespace Bikee.Security.Mongo.Tests
 		[Test]
 		public void MapTest()
 		{
-			// Register map
-			new UserBsonMap();
-
 			// Create collection
 			var users = this.MongoDatabase.GetCollection<User>("users");
 
