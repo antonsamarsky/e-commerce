@@ -16,10 +16,10 @@ namespace Bikee.Security
 	{
 		#region Consts
 
-		private const int MaxUsernameLength = 50;
+		private const int MaxUsernameLength = 100;
 		private const int MaxPasswordLength = 100;
 		private const int MaxPasswordAnswerLength = 128;
-		private const int MaxEmailLength = 50;
+		private const int MaxEmailLength = 100;
 		private const int MaxPasswordQuestionLength = 256;
 
 		#endregion
@@ -176,6 +176,11 @@ namespace Bikee.Security
 		/// <exception cref="T:System.InvalidOperationException">An attempt is made to call <see cref="M:System.Configuration.Provider.ProviderBase.Initialize(System.String,System.Collections.Specialized.NameValueCollection)"/> on a provider after the provider has already been initialized.</exception>
 		public override void Initialize(string name, NameValueCollection config)
 		{
+			if (config == null)
+			{
+				throw new ArgumentNullException("config");
+			}
+
 			if (string.IsNullOrEmpty(name))
 			{
 				name = this.GetType().Name;

@@ -25,7 +25,7 @@ namespace Bikee.Security.Mongo.Tests
 		public void InitTest()
 		{
 			this.provider.Should().NotBeNull();
-			this.provider.UsersCollection.Should().NotBeNull();
+			this.provider.UserCollection.Should().NotBeNull();
 		}
 
 		[TestCase("User name", "barbar! _asvada", "email@mail.com", true)]
@@ -52,7 +52,7 @@ namespace Bikee.Security.Mongo.Tests
 			user.IsOnline.Should().Be(true);
 
 			// Assert user information from database
-			var userFromDB = this.MongoDatabase.GetCollection<User>(this.provider.UsersCollectionName).FindOneById(BsonValue.Create(user.ProviderUserKey));
+			var userFromDB = this.MongoDatabase.GetCollection<User>(this.provider.UserCollectionName).FindOneById(BsonValue.Create(user.ProviderUserKey));
 
 			userFromDB.Should().NotBeNull();
 			userFromDB.LowercaseUsername.Should().Be(userName.ToLowerInvariant());
@@ -87,7 +87,7 @@ namespace Bikee.Security.Mongo.Tests
 			user.Should().NotBeNull();
 
 			// verify that the password format was saved
-			var collection = this.MongoDatabase.GetCollection<User>(mongoProvider.UsersCollectionName);
+			var collection = this.MongoDatabase.GetCollection<User>(mongoProvider.UserCollectionName);
 			var userFromDB = collection.FindOneById(BsonValue.Create(user.ProviderUserKey));
 			userFromDB.PasswordFormat.Should().Be(format);
 
@@ -216,7 +216,7 @@ namespace Bikee.Security.Mongo.Tests
 			status.Should().Be(MembershipCreateStatus.Success);
 
 			this.provider.DeleteUser("foo", true).Should().BeTrue();
-			this.MongoDatabase.GetCollection<User>(this.provider.UsersCollectionName).Count().Should().Be(0);
+			this.MongoDatabase.GetCollection<User>(this.provider.UserCollectionName).Count().Should().Be(0);
 
 			this.provider.CreateUser("foo", "barbar!", "foo@bar.com", null, null, true, null, out status);
 			status.Should().Be(MembershipCreateStatus.Success);
@@ -225,7 +225,7 @@ namespace Bikee.Security.Mongo.Tests
 			// passing true or false to DeleteUser will be the same.
 			provider.DeleteUser("foo", deleteAllRelatedData: true).Should().BeTrue(); ;
 
-			this.MongoDatabase.GetCollection<User>(this.provider.UsersCollectionName).Count().Should().Be(0);
+			this.MongoDatabase.GetCollection<User>(this.provider.UserCollectionName).Count().Should().Be(0);
 		}
 
 		[Test]
@@ -655,7 +655,7 @@ namespace Bikee.Security.Mongo.Tests
 			bool worked = mongoProvider2.ValidateUser("foo", "bar!bar");
 			Assert.AreEqual(false, worked);
 
-			this.MongoDatabase.DropCollection(mongoProvider2.UsersCollectionName);
+			this.MongoDatabase.DropCollection(mongoProvider2.UserCollectionName);
 		}
 
 		[Test]
@@ -759,7 +759,7 @@ namespace Bikee.Security.Mongo.Tests
 			Assert.AreEqual("foo@bar.com", user.Email);
 
 			// save Profile over User
-			var profiles = this.MongoDatabase.GetCollection<Profile>(this.provider.UsersCollectionName);
+			var profiles = this.MongoDatabase.GetCollection<Profile>(this.provider.UserCollectionName);
 
 			var profile = profiles.FindOne();
 			profile.FirstName = "Neo";

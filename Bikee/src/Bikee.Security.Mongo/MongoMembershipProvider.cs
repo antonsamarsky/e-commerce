@@ -17,9 +17,8 @@ namespace Bikee.Security.Mongo
 		private string collectionSuffix;
 		private MongoDatabase database;
 
-		public string UsersCollectionName { get; private set; }
-
-		public MongoCollection<User> UsersCollection { get; set; }
+		public string UserCollectionName { get; protected set; }
+		public MongoCollection<User> UserCollection { get; protected set; }
 
 		public override string ApplicationName
 		{
@@ -27,8 +26,8 @@ namespace Bikee.Security.Mongo
 			set
 			{
 				this.applicationName = value;
-				this.UsersCollectionName = MongoHelper.GenerateCollectionName(value, this.collectionSuffix);
-				this.UsersCollection = this.database.GetCollection<User>(this.UsersCollectionName);
+				this.UserCollectionName = MongoHelper.GenerateCollectionName(value, this.collectionSuffix);
+				this.UserCollection = this.database.GetCollection<User>(this.UserCollectionName);
 			}
 		}
 
@@ -295,7 +294,7 @@ namespace Bikee.Security.Mongo
 			if (userIsOnline)
 			{
 				var update = Update.Set(MongoHelper.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
-				var cursor = this.UsersCollection.FindAndModify(query, SortBy.Null, update, true);
+				var cursor = this.UserCollection.FindAndModify(query, SortBy.Null, update, true);
 
 				if (!cursor.Ok)
 				{
@@ -308,7 +307,7 @@ namespace Bikee.Security.Mongo
 				return this.ToMembershipUser(user);
 			}
 
-			var result = this.UsersCollection.FindOne(query);
+			var result = this.UserCollection.FindOne(query);
 			return result == null ? null : this.ToMembershipUser(result);
 		}
 
@@ -338,7 +337,7 @@ namespace Bikee.Security.Mongo
 
 			var query = Query.EQ(MongoHelper.GetElementNameFor<User>(u => u.LowercaseUsername), username.ToLowerInvariant());
 
-			var result = this.UsersCollection.Remove(query, SafeMode.True);
+			var result = this.UserCollection.Remove(query, SafeMode.True);
 			return result.Ok;
 		}
 
@@ -347,13 +346,13 @@ namespace Bikee.Security.Mongo
 			var users = new MembershipUserCollection();
 
 			// execute second query to get total count
-			totalRecords = (int)this.UsersCollection.Count();
+			totalRecords = (int)this.UserCollection.Count();
 			if (totalRecords == 0 || pageIndex < 0 || pageSize < 0)
 			{
 				return users;
 			}
 
-			var cursor = this.UsersCollection.FindAll().SetSkip(pageIndex * pageSize).SetLimit(pageSize);
+			var cursor = this.UserCollection.FindAll().SetSkip(pageIndex * pageSize).SetLimit(pageSize);
 
 			foreach (var user in cursor)
 			{
@@ -370,7 +369,7 @@ namespace Bikee.Security.Mongo
 			DateTime compareTime = DateTime.UtcNow.Subtract(onlineSpan);
 
 			var query = Query.GT(MongoHelper.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), compareTime);
-			return (int)this.UsersCollection.Find(query).Count();
+			return (int)this.UserCollection.Find(query).Count();
 		}
 
 		public override MembershipUserCollection FindUsersByName(string usernamePatternToMatch, int pageIndex, int pageSize, out int totalRecords)
@@ -386,7 +385,7 @@ namespace Bikee.Security.Mongo
 			}
 
 			var query = Query.Matches(MongoHelper.GetElementNameFor<User>(u => u.LowercaseUsername), new BsonRegularExpression(usernamePatternToMatch));
-			var cursor = this.UsersCollection.Find(query).SetSkip(pageIndex * pageSize).SetLimit(pageSize);
+			var cursor = this.UserCollection.Find(query).SetSkip(pageIndex * pageSize).SetLimit(pageSize);
 
 			foreach (var user in cursor)
 			{
@@ -394,7 +393,7 @@ namespace Bikee.Security.Mongo
 			}
 
 			// Total count;
-			totalRecords = (int)this.UsersCollection.Find(query).Count();
+			totalRecords = (int)this.UserCollection.Find(query).Count();
 
 			return users;
 		}
@@ -412,7 +411,7 @@ namespace Bikee.Security.Mongo
 			}
 
 			var query = Query.Matches(MongoHelper.GetElementNameFor<User>(u => u.LowercaseEmail), new BsonRegularExpression(emailPatternToMatch));
-			var cursor = this.UsersCollection.Find(query).SetSkip(pageIndex * pageSize).SetLimit(pageSize);
+			var cursor = this.UserCollection.Find(query).SetSkip(pageIndex * pageSize).SetLimit(pageSize);
 
 			foreach (var user in cursor)
 			{
@@ -420,7 +419,7 @@ namespace Bikee.Security.Mongo
 			}
 
 			// Total count;
-			totalRecords = (int)this.UsersCollection.Find(query).Count();
+			totalRecords = (int)this.UserCollection.Find(query).Count();
 
 			return users;
 		}
@@ -429,7 +428,7 @@ namespace Bikee.Security.Mongo
 		{
 			this.database = MongoDatabase.Create(this.ConnectionString);
 
-			// This will set UsersCollectionName and init UsersCollection
+			// This will set UserCollectionName and init UserCollection
 			this.ApplicationName = this.applicationName;
 
 			DateTimeSerializationOptions.Defaults = DateTimeSerializationOptions.LocalInstance;
@@ -437,8 +436,8 @@ namespace Bikee.Security.Mongo
 
 		protected virtual void EnsureIndexes()
 		{
-			this.UsersCollection.EnsureIndex(MongoHelper.GetElementNameFor<User>(u => u.LowercaseUsername));
-			this.UsersCollection.EnsureIndex(MongoHelper.GetElementNameFor<User>(u => u.LowercaseEmail));
+			this.UserCollection.EnsureIndex(MongoHelper.GetElementNameFor<User>(u => u.LowercaseUsername));
+			this.UserCollection.EnsureIndex(MongoHelper.GetElementNameFor<User>(u => u.LowercaseEmail));
 		}
 
 		protected virtual User GetUserByMail(string email, bool userIsOnline = false)
@@ -454,7 +453,7 @@ namespace Bikee.Security.Mongo
 			if (userIsOnline)
 			{
 				var update = Update.Set(MongoHelper.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
-				var cursor = this.UsersCollection.FindAndModify(query, SortBy.Null, update, true);
+				var cursor = this.UserCollection.FindAndModify(query, SortBy.Null, update, true);
 
 				if (!cursor.Ok)
 				{
@@ -465,7 +464,7 @@ namespace Bikee.Security.Mongo
 				return document == null ? null : BsonSerializer.Deserialize<User>(document);
 			}
 
-			return this.UsersCollection.FindOne(query);
+			return this.UserCollection.FindOne(query);
 		}
 
 		protected virtual User GetUserByName(string userName, bool userIsOnline = false)
@@ -481,7 +480,7 @@ namespace Bikee.Security.Mongo
 			if (userIsOnline)
 			{
 				var update = Update.Set(MongoHelper.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);
-				var cursor = this.UsersCollection.FindAndModify(query, SortBy.Null, update, true);
+				var cursor = this.UserCollection.FindAndModify(query, SortBy.Null, update, true);
 
 				if (!cursor.Ok)
 				{
@@ -491,7 +490,7 @@ namespace Bikee.Security.Mongo
 				return document == null ? null : BsonSerializer.Deserialize<User>(document);
 			}
 
-			return this.UsersCollection.FindOne(query);
+			return this.UserCollection.FindOne(query);
 		}
 
 		protected virtual void Save<T>(T user) where T : User
@@ -499,7 +498,7 @@ namespace Bikee.Security.Mongo
 			SafeModeResult result = null;
 			try
 			{
-				var users = this.UsersCollection;
+				var users = this.UserCollection;
 				result = users.Save(user, SafeMode.True);
 			}
 			catch (Exception exception)
