@@ -292,7 +292,6 @@ namespace Bikee.Security.Mongo
 
 			var query = Query.EQ(MongoHelper.GetElementNameFor<User>(u => u.Id), id);
 
-
 			if (userIsOnline)
 			{
 				var update = Update.Set(MongoHelper.GetElementNameFor<User, DateTime>(u => u.LastActivityDate), DateTime.UtcNow);

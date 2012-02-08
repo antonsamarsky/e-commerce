@@ -1,8 +1,5 @@
 ﻿using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 
 namespace Bikee.Bson
 {

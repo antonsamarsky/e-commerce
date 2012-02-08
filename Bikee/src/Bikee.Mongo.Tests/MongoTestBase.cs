@@ -1,5 +1,7 @@
 ﻿using System.Configuration;
 using Bikee.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Bson.Serialization.Options;
 using MongoDB.Driver;
 using NUnit.Framework;
@@ -15,6 +17,13 @@ namespace Bikee.Mongo.Tests
 		[SetUp]
 		public void InitTestDatabase()
 		{
+			var conventions = new ConventionProfile();
+			conventions.SetIgnoreExtraElementsConvention(new AlwaysIgnoreExtraElementsConvention());
+			BsonClassMap.RegisterConventions(conventions, t => t.FullName.StartsWith("Bikee."));
+
+			// Compose all maps.
+			BsonMapRegistrator.Compose();
+
 			string connectionString = ConfigurationManager.ConnectionStrings[0].ConnectionString;
 			this.MongoServer = string.IsNullOrEmpty(connectionString)
 												? MongoServer.Create() // connect to local host
@@ -29,9 +38,6 @@ namespace Bikee.Mongo.Tests
 			this.MongoDatabase = this.MongoServer.GetDatabase(databaseName);
 
 			DateTimeSerializationOptions.Defaults = DateTimeSerializationOptions.LocalInstance;
-
-			// Compose all maps.
-			BsonMapRegistrator.Compose();
 		}
 
 		[TearDown]
