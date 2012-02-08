@@ -10,12 +10,10 @@ namespace Bikee.Security.Mongo.Tests
 	[TestFixture]
 	public class UserBsonMapTest : MongoTestBase
 	{
-		private User user;
-
-		[SetUp]
-		public void CreateUser()
+		[Test]
+		public void MapTest()
 		{
-			this.user = new User
+			var user = new User
 			{
 				Id = ObjectId.GenerateNewId(),
 				UserName = "UserName value",
@@ -40,22 +38,18 @@ namespace Bikee.Security.Mongo.Tests
 				FailedPasswordAttemptCount = 0,
 				FailedPasswordAttemptWindowStart = DateTime.MinValue
 			};
-		}
 
-		[Test]
-		public void MapTest()
-		{
 			// Create collection
 			var users = this.MongoDatabase.GetCollection<User>("users");
 
 			// Insert user
-			users.Insert(this.user);
+			users.Insert(user);
 
 			// Getuser
 			var userFromDB = users.FindOne();
 
 			// Assert if user is the same.
-			userFromDB.ShouldHave().AllProperties().EqualTo(this.user);
+			userFromDB.ShouldHave().AllProperties().EqualTo(user);
 		}
 	}
 }
