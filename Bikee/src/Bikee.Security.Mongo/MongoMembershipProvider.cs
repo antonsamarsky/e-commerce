@@ -18,7 +18,8 @@ namespace Bikee.Security.Mongo
 		private MongoDatabase database;
 
 		public string UserCollectionName { get; protected set; }
-		public MongoCollection<User> UserCollection { get; protected set; }
+
+		protected MongoCollection<User> UserCollection { get; set; }
 
 		public override string ApplicationName
 		{

@@ -7,7 +7,6 @@ using System.Linq;
 using System.Web.Security;
 using FluentMongo.Linq;
 using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Options;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 
@@ -28,8 +27,8 @@ namespace Bikee.Security.Mongo
 		private string applicationName;
 		private string userCollectionSuffix;
 		private string roleCollectionSuffix;
-		private object invalidUsernameCharacters;
-		private object invalidRoleCharacters;
+		private string invalidUsernameCharacters;
+		private string invalidRoleCharacters;
 		private string connectionString;
 
 		#endregion
@@ -37,8 +36,8 @@ namespace Bikee.Security.Mongo
 		public string RoleCollectionName { get; protected set; }
 		public string UserCollectionName { get; protected set; }
 
-		public MongoCollection<BsonDocument> RoleCollection { get; protected set; }
-		public MongoCollection<User> UserCollection { get; protected set; }
+		protected MongoCollection<BsonDocument> RoleCollection { get; set; }
+		protected MongoCollection<User> UserCollection { get; set; }
 
 		#region Overrides of MongoRoleProvider
 
@@ -108,17 +107,10 @@ namespace Bikee.Security.Mongo
 		/// <param name="username">The user name to search for.</param><param name="roleName">The role to search in.</param>
 		public override bool IsUserInRole(string username, string roleName)
 		{
-			if (string.IsNullOrEmpty(roleName))
-			{
-				throw new ArgumentException("Role cannot be blank.");
-			}
+			this.ValidateUserName(username);
+			this.ValidateRoleName(roleName);
 
-			if (roleName.Length > MaxRoleLength)
-			{
-				throw new ArgumentException("Role name is too long.");
-			}
-
-			return  UserCollection.AsQueryable().Any(u => u.LowercaseUsername == username.ToLowerInvariant() && 
+			return UserCollection.AsQueryable().Any(u => u.LowercaseUsername == username.ToLowerInvariant() &&
 																										u.Roles.Contains(roleName.ToLowerInvariant()));
 		}
 
@@ -131,7 +123,11 @@ namespace Bikee.Security.Mongo
 		/// <param name="username">The user to return a list of roles for.</param>
 		public override string[] GetRolesForUser(string username)
 		{
-			throw new System.NotImplementedException();
+			this.ValidateUserName(username);
+
+			return (from user in this.UserCollection.AsQueryable()
+							where user.LowercaseUsername == username.ToLowerInvariant()
+							select user.Roles.ToArray()).FirstOrDefault();
 		}
 
 		/// <summary>
@@ -140,15 +136,7 @@ namespace Bikee.Security.Mongo
 		/// <param name="roleName">The name of the role to create.</param>
 		public override void CreateRole(string roleName)
 		{
-			if (string.IsNullOrEmpty(roleName))
-			{
-				throw new ArgumentException("Role cannot be blank.");
-			}
-
-			if (roleName.Length > MaxRoleLength)
-			{
-				throw new ArgumentException("Role name is too long.");
-			}
+			this.ValidateRoleName(roleName);
 
 			var doc = new BsonDocument();
 			doc.SetDocumentId(roleName.ToLowerInvariant());
@@ -169,15 +157,7 @@ namespace Bikee.Security.Mongo
 		/// <param name="roleName">The name of the role to delete.</param><param name="throwOnPopulatedRole">If true, throw an exception if <paramref name="roleName"/> has one or more members and do not delete <paramref name="roleName"/>.</param>
 		public override bool DeleteRole(string roleName, bool throwOnPopulatedRole)
 		{
-			if (string.IsNullOrEmpty(roleName))
-			{
-				throw new ArgumentException("Role cannot be blank.");
-			}
-
-			if (roleName.Length > MaxRoleLength)
-			{
-				throw new ArgumentException("Role name is too long.");
-			}
+			this.ValidateRoleName(roleName);
 
 			var rolePopulated = this.UserCollection.AsQueryable().Any(u => u.Roles.Contains(roleName.ToLowerInvariant()));
 			if (throwOnPopulatedRole && rolePopulated)
@@ -198,7 +178,8 @@ namespace Bikee.Security.Mongo
 		/// <param name="roleName">The name of the role to search for in the data source.</param>
 		public override bool RoleExists(string roleName)
 		{
-			throw new System.NotImplementedException();
+			this.ValidateRoleName(roleName);
+			return this.RoleCollection.FindOneById(BsonValue.Create(roleName.ToLowerInvariant())) != null;
 		}
 
 		/// <summary>
@@ -217,19 +198,6 @@ namespace Bikee.Security.Mongo
 				throw new ArgumentException("usernames is empty.");
 			}
 
-			usernames.ToList().ForEach(n =>
-			{
-				if (string.IsNullOrEmpty(n))
-				{
-					throw new ArgumentException("User cannot be blank.");
-				}
-
-				if (n.Length > MaxUsernameLength)
-				{
-					throw new ArgumentException("User name is too long.");
-				}
-			});
-
 			if (roleNames == null)
 			{
 				throw new ArgumentNullException("usernames");
@@ -240,23 +208,18 @@ namespace Bikee.Security.Mongo
 				throw new ArgumentException("roleNames is empty.");
 			}
 
-			roleNames.ToList().ForEach(r =>
-			{
-				if (string.IsNullOrEmpty(r))
-				{
-					throw new ArgumentException("Role cannot be blank.");
-				}
-
-				if (r.Length > MaxRoleLength)
-				{
-					throw new ArgumentException("Role name is too long.");
-				}
-			});
-
 			// ensure lowercase
-			var roles = roleNames.Select(role => role.ToLowerInvariant()).ToList();
-			var users = usernames.Select(username => username.ToLowerInvariant()).ToList();
-			
+			var roles = roleNames.Select(role =>
+			{
+				this.ValidateRoleName(role);
+				return role.ToLowerInvariant();
+			}).ToList();
+			var users = usernames.Select(username =>
+			{
+				this.ValidateRoleName(username);
+				return username.ToLowerInvariant();
+			}).ToList();
+
 			// first add any non-existant roles to roles collection
 			// a) pull all roles, filter out existing, push new
 			//    ...or 
@@ -270,7 +233,9 @@ namespace Bikee.Security.Mongo
 			// now update all users' roles
 			var query = Query.In(MongoHelper.GetElementNameFor<User>(u => u.LowercaseUsername), new BsonArray(users.ToArray()));
 			var update = Update.AddToSetEachWrapped<string>(MongoHelper.GetElementNameFor<User>(u => u.Roles), roles);
+
 			var result = UserCollection.Update(query, update, UpdateFlags.Multi, SafeMode.True);
+
 			if (!result.Ok)
 			{
 				throw new ProviderException(result.LastErrorMessage);
@@ -283,7 +248,46 @@ namespace Bikee.Security.Mongo
 		/// <param name="usernames">A string array of user names to be removed from the specified roles. </param><param name="roleNames">A string array of role names to remove the specified user names from.</param>
 		public override void RemoveUsersFromRoles(string[] usernames, string[] roleNames)
 		{
-			throw new System.NotImplementedException();
+			if (usernames == null)
+			{
+				throw new ArgumentNullException("usernames");
+			}
+
+			if (!usernames.Any())
+			{
+				throw new ArgumentException("usernames is empty.");
+			}
+
+			if (roleNames == null)
+			{
+				throw new ArgumentNullException("usernames");
+			}
+
+			if (!roleNames.Any())
+			{
+				throw new ArgumentException("roleNames is empty.");
+			}
+
+			// ensure lowercase
+			var roles = roleNames.Select(role =>
+			{
+				this.ValidateRoleName(role);
+				return role.ToLowerInvariant();
+			}).ToList();
+			var users = usernames.Select(username =>
+			{
+				this.ValidateRoleName(username);
+				return username.ToLowerInvariant();
+			}).ToList();
+
+			var query = Query.In(MongoHelper.GetElementNameFor<User>(u => u.LowercaseUsername), new BsonArray(users.ToArray()));
+			var update = Update.PullAllWrapped<string>(MongoHelper.GetElementNameFor<User>(u => u.Roles), roles);
+
+			var result = this.UserCollection.Update(query, update, UpdateFlags.Multi, SafeMode.True);
+			if (!result.Ok)
+			{
+				throw new ProviderException(result.LastErrorMessage);
+			}
 		}
 
 		/// <summary>
@@ -295,7 +299,11 @@ namespace Bikee.Security.Mongo
 		/// <param name="roleName">The name of the role to get the list of users for.</param>
 		public override string[] GetUsersInRole(string roleName)
 		{
-			throw new System.NotImplementedException();
+			this.ValidateRoleName(roleName);
+
+			return (from user in this.UserCollection.AsQueryable()
+							where user.Roles.Contains(roleName.ToLowerInvariant())
+							select user.UserName).ToArray();
 		}
 
 		/// <summary>
@@ -318,7 +326,25 @@ namespace Bikee.Security.Mongo
 		/// <param name="roleName">The role to search in.</param><param name="usernameToMatch">The user name to search for.</param>
 		public override string[] FindUsersInRole(string roleName, string usernameToMatch)
 		{
-			throw new System.NotImplementedException();
+			this.ValidateRoleName(roleName);
+
+			if (string.IsNullOrWhiteSpace(usernameToMatch))
+			{
+				return new string[0];
+			}
+
+			var userNameField = MongoHelper.GetElementNameFor<User>(u => u.LowercaseUsername);
+			var roleField = MongoHelper.GetElementNameFor<User>(u => u.Roles);
+
+			var nameMatchQuery = Query.Matches(userNameField, new BsonRegularExpression(usernameToMatch));
+			var roleMatchQuery = Query.EQ(roleField, roleName.ToLowerInvariant());
+			var query = Query.And(nameMatchQuery, roleMatchQuery);
+
+			var cursor = UserCollection.FindAs<BsonDocument>(query);
+
+			// only want the usernames
+			cursor.SetFields(Fields.Include(userNameField).Exclude("_id"));
+			return cursor.Select(doc => doc[userNameField].AsString).ToArray();
 		}
 
 		#endregion
@@ -335,6 +361,52 @@ namespace Bikee.Security.Mongo
 		{
 			this.UserCollection.EnsureIndex(MongoHelper.GetElementNameFor<User>(u => u.LowercaseUsername));
 			this.UserCollection.EnsureIndex(MongoHelper.GetElementNameFor<User>(u => u.Roles));
+		}
+
+		protected virtual void ValidateRoleName(string roleName)
+		{
+			if (roleName == null)
+			{
+				throw new ArgumentNullException("roleName");
+			}
+
+			if (roleName.Trim() == string.Empty)
+			{
+				throw new ArgumentException("Role cannot be blank.");
+			}
+
+			if (roleName.Length > MaxRoleLength)
+			{
+				throw new ArgumentException("Role name is too long.");
+			}
+
+			if (this.invalidRoleCharacters.Any(roleName.Contains))
+			{
+				throw new ArgumentException("Role name contains invalid character(s).");
+			}
+		}
+
+		protected virtual void ValidateUserName(string userName)
+		{
+			if (userName == null)
+			{
+				throw new ArgumentNullException("userName");
+			}
+
+			if (userName.Trim() == string.Empty)
+			{
+				throw new ArgumentException("User name cannot be blank.");
+			}
+
+			if (userName.Length > MaxUsernameLength)
+			{
+				throw new ArgumentException("User name name is too long.");
+			}
+
+			if (this.invalidUsernameCharacters.Any(userName.Contains))
+			{
+				throw new ArgumentException("User name contains invalid character(s).");
+			}
 		}
 	}
 }

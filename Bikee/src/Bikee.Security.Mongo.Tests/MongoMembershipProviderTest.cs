@@ -21,13 +21,6 @@ namespace Bikee.Security.Mongo.Tests
 			this.provider = (MongoMembershipProvider)Membership.Provider;
 		}
 
-		[Test]
-		public void InitTest()
-		{
-			this.provider.Should().NotBeNull();
-			this.provider.UserCollection.Should().NotBeNull();
-		}
-
 		[TestCase("User name", "barbar! _asvada", "email@mail.com", true)]
 		public void CreateUserDefaultTest(string userName, string password, string email, bool isApproved)
 		{
@@ -684,7 +677,7 @@ namespace Bikee.Security.Mongo.Tests
 		public void ChangeAppNameTest()
 		{
 			var mongoProvider = new MongoMembershipProvider();
-			NameValueCollection config = new NameValueCollection
+			var config = new NameValueCollection
 			{
 				{"connectionStringName", ConfigurationManager.ConnectionStrings[0].Name},
 				{"requiresUniqueEmail", "false"},
@@ -742,7 +735,7 @@ namespace Bikee.Security.Mongo.Tests
 			Assert.IsNull(username);
 		}
 
-		[Test, Ignore]
+		[Test,]
 		public void UserUpdateDoesNotWipeOutIgnoredFieldsTest()
 		{
 			if (!BsonClassMap.IsClassMapRegistered(typeof(Profile)))
