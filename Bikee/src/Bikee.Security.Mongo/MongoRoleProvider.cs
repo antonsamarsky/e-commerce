@@ -80,13 +80,19 @@ namespace Bikee.Security.Mongo
 
 			base.Initialize(name, config);
 
-			this.invalidUsernameCharacters = SecurityHelper.GetConfigValue(config["invalidUsernameCharacters"], ",%\"/{}()''");
-			this.invalidRoleCharacters = SecurityHelper.GetConfigValue(config["invalidRoleCharacters"], ",%");
-			this.roleCollectionSuffix = SecurityHelper.GetConfigValue(config["roleCollectionSuffix"], "roles");
-			this.userCollectionSuffix = SecurityHelper.GetConfigValue(config["userCollectionSuffix"], "users");
-			this.applicationName = SecurityHelper.GetConfigValue(config["applicationName"], System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath);
+			var lconfig = new NameValueCollection();
+			foreach (string key in config)
+			{
+				lconfig[key.ToLowerInvariant()] = config[key];
+			}
 
-			var connectionStringSettings = ConfigurationManager.ConnectionStrings[config["connectionStringName"]];
+			this.invalidUsernameCharacters = SecurityHelper.GetConfigValue(lconfig["invalidusernamecharacters"], ",%\"/{}()''");
+			this.invalidRoleCharacters = SecurityHelper.GetConfigValue(lconfig["invalidrolecharacters"], ",%");
+			this.roleCollectionSuffix = SecurityHelper.GetConfigValue(lconfig["rolecollectionsuffix"], "roles");
+			this.userCollectionSuffix = SecurityHelper.GetConfigValue(lconfig["usercollectionsuffix"], "users");
+			this.applicationName = SecurityHelper.GetConfigValue(lconfig["applicationname"], System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath);
+
+			var connectionStringSettings = ConfigurationManager.ConnectionStrings[lconfig["connectionstringname"]];
 			if (connectionStringSettings == null || string.IsNullOrEmpty(connectionStringSettings.ConnectionString.Trim()))
 			{
 				throw new ProviderException("Connection string cannot be blank.");

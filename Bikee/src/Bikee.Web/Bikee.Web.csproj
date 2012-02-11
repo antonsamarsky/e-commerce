@@ -120,6 +120,20 @@
       <SubType>Designer</SubType>
     </Content>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Bikee.Bson\Bikee.Bson.csproj">
+      <Project>{3604FA0E-FD33-4CDC-8DF9-3A77D210000E}</Project>
+      <Name>Bikee.Bson</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Bikee.Security.Mongo\Bikee.Security.Mongo.csproj">
+      <Project>{326A083D-3589-441A-B7E4-67BAE48E80B2}</Project>
+      <Name>Bikee.Security.Mongo</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Bikee.Security\Bikee.Security.csproj">
+      <Project>{BD31D54C-596B-403B-A068-CE2E5393D472}</Project>
+      <Name>Bikee.Security</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -194,21 +194,27 @@ namespace Bikee.Security
 
 			base.Initialize(name, config);
 
-			this.maxInvalidPasswordAttempts = SecurityHelper.GetConfigValue(config["maxInvalidPasswordAttempts"], 5);
-			this.passwordAttemptWindow = SecurityHelper.GetConfigValue(config["passwordAttemptWindow"], 10);
-			this.minRequiredNonAlphanumericCharacters = SecurityHelper.GetConfigValue(config["minRequiredNonAlphanumericCharacters"], 1);
-			this.minRequiredPasswordLength = SecurityHelper.GetConfigValue(config["minRequiredPasswordLength"], 7);
-			this.passwordStrengthRegularExpression = SecurityHelper.GetConfigValue(config["passwordStrengthRegularExpression"], string.Empty);
-			this.enablePasswordReset = SecurityHelper.GetConfigValue(config["enablePasswordReset"], true);
-			this.enablePasswordRetrieval = SecurityHelper.GetConfigValue(config["enablePasswordRetrieval"], false);
-			this.requiresQuestionAndAnswer = SecurityHelper.GetConfigValue(config["requiresQuestionAndAnswer"], false);
-			this.requiresUniqueEmail = SecurityHelper.GetConfigValue(config["requiresUniqueEmail"], true);
+			var lconfig = new NameValueCollection();
+			foreach (string key in config)
+			{
+				lconfig[key.ToLowerInvariant()] = config[key];
+			}
 
-			this.InvalidUsernameCharacters = SecurityHelper.GetConfigValue(config["invalidUsernameCharacters"], ",%\"/{}()''");
-			this.InvalidEmailCharacters = SecurityHelper.GetConfigValue(config["invalidEmailCharacters"], ",%\"/{}()''");
-			this.WriteExceptionsToEventLog = SecurityHelper.GetConfigValue(config["writeExceptionsToEventLog"], true);
+			this.maxInvalidPasswordAttempts = SecurityHelper.GetConfigValue(lconfig["maxinvalidpasswordattempts"], 5);
+			this.passwordAttemptWindow = SecurityHelper.GetConfigValue(lconfig["passwordattemptwindow"], 10);
+			this.minRequiredNonAlphanumericCharacters = SecurityHelper.GetConfigValue(lconfig["minrequirednonalphanumericcharacters"], 1);
+			this.minRequiredPasswordLength = SecurityHelper.GetConfigValue(lconfig["minrequiredpasswordlength"], 7);
+			this.passwordStrengthRegularExpression = SecurityHelper.GetConfigValue(lconfig["passwordstrengthregularexpression"], string.Empty);
+			this.enablePasswordReset = SecurityHelper.GetConfigValue(lconfig["enablepasswordreset"], true);
+			this.enablePasswordRetrieval = SecurityHelper.GetConfigValue(lconfig["enablepasswordretrieval"], false);
+			this.requiresQuestionAndAnswer = SecurityHelper.GetConfigValue(lconfig["requiresquestionandanswer"], false);
+			this.requiresUniqueEmail = SecurityHelper.GetConfigValue(lconfig["requiresuniqueemail"], true);
 
-			string passwordFormatConfig = config["passwordFormat"] ?? "Hashed";
+			this.InvalidUsernameCharacters = SecurityHelper.GetConfigValue(lconfig["invalidusernamecharacters"], ",%\"/{}()''");
+			this.InvalidEmailCharacters = SecurityHelper.GetConfigValue(lconfig["invalidemailcharacters"], ",%\"/{}()''");
+			this.WriteExceptionsToEventLog = SecurityHelper.GetConfigValue(lconfig["writeexceptionstoeventlog"], true);
+
+			string passwordFormatConfig = SecurityHelper.GetConfigValue(lconfig["passwordformat"], "Hashed");
 			switch (passwordFormatConfig)
 			{
 				case "Hashed":
@@ -229,7 +235,7 @@ namespace Bikee.Security
 				throw new ProviderException("Configured settings are invalid: Hashed passwords cannot be retrieved. Either set the password format to different type, or set supportsPasswordRetrieval to false.");
 			}
 
-			var connectionStringSettings = ConfigurationManager.ConnectionStrings[config["connectionStringName"]];
+			var connectionStringSettings = ConfigurationManager.ConnectionStrings[lconfig["connectionstringname"]];
 			if (connectionStringSettings == null || string.IsNullOrEmpty(connectionStringSettings.ConnectionString.Trim()))
 			{
 				throw new ProviderException("Connection string cannot be blank.");
