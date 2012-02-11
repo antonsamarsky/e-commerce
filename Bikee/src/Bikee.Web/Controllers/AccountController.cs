@@ -1,28 +1,17 @@
 ﻿using System.Web.Mvc;
-using System.Web.Routing;
 using System.Web.Security;
 using Bikee.Web.Models.Security;
+using Ninject;
 
 namespace Bikee.Web.Controllers
 {
 	public class AccountController : Controller
 	{
+		[Inject]
 		public IFormsAuthenticationService FormsService { get; set; }
+
+		[Inject]
 		public IMembershipService MembershipService { get; set; }
-
-		protected override void Initialize(RequestContext requestContext)
-		{
-			if (FormsService == null)
-			{
-				FormsService = new FormsAuthenticationService();
-			}
-			if (MembershipService == null)
-			{
-				MembershipService = new AccountMembershipService();
-			}
-
-			base.Initialize(requestContext);
-		}
 
 		// **************************************
 		// URL: /Account/LogOn
