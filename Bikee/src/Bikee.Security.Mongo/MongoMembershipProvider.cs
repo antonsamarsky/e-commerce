@@ -42,10 +42,10 @@ namespace Bikee.Security.Mongo
 				lconfig[key.ToLowerInvariant()] = config[key];
 			}
 
-			this.applicationName = SecurityHelper.GetConfigValue(config["applicationname"], System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath);
+			this.applicationName = SecurityHelper.GetConfigValue(lconfig["applicationname"], System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath);
 
 			// MongoDB specific setting
-			this.collectionSuffix = SecurityHelper.GetConfigValue(config["collectionsuffix"], "users");
+			this.collectionSuffix = SecurityHelper.GetConfigValue(lconfig["collectionsuffix"], "users");
 
 			this.InitDatabase();
 			this.EnsureIndexes();
