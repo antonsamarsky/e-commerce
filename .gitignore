@@ -21,3 +21,4 @@ Bikee/TestResults
 *.ncrunchproject
 Bikee/src/Bikee.Bson.Tests/bin
 Bikee/src/Bikee.Bson.Tests/obj
+Bikee/Packages.dgml
